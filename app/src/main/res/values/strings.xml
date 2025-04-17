@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">BudgetFlow</string>
+
+    <string name="homeWelcome">Hi, Welcome Back</string>
+    <string name="fpwd">Forgot password?</string>
+    <string name="login">Log In</string>
+    <string name="signup">Sign Up</string>
+</resources>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_home"
+        android:icon="@drawable/home"
+        android:title="Home" />
+    <item
+        android:id="@+id/nav_stats"
+        android:icon="@drawable/stats"
+        android:title="Stats" />
+    <!-- Empty item to make space for FAB -->
+    <item
+        android:id="@+id/empty"
+        android:title=""
+        android:enabled="false" />
+    <item
+        android:id="@+id/nav_wallet"
+        android:icon="@drawable/wallet"
+        android:title="Wallet" />
+    <item
+        android:id="@+id/nav_profile"
+        android:icon="@drawable/profile"
+        android:title="Profile" />
+</menu>

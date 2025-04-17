@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <color name="primaryWhite">#FFFFFF</color> <!-- main backgrounds -->
+    <color name="lightAccent">#F0F4F8</color> <!-- soft secondary areas -->
+    <color name="cardBackground">#FFFFFF</color>
+    <color name="lightBlue">#ADD8E6</color> <!-- You can customize this -->
+    <color name="textPrimary">#1C1C1C</color> <!-- almost-black -->
+    <color name="textSecondary">#6D6D6D</color>
+    <color name="incomeText">#4CAF50</color> <!-- calm green for income -->
+    <color name="expenseText">#E53935</color> <!-- red for expense -->
+    <color name="accentBlue">#537FE7</color> <!-- highlight, tabs, icons -->
+    <color name="dividerLine">#E0E0E0</color> <!-- for subtle separators -->
+
+
+</resources>
