@@ -17,4 +17,13 @@
     <color name="red">#E53935</color>
     <color name="teal_700">#018786</color>
 
+
+        <color name="primary_dark">#1976D2</color>
+        <color name="primary_light">#E3F2FD</color>
+        <color name="secondary_dark">#7B1FA2</color>
+        <color name="secondary_light">#E1BEE7</color>
+        <color name="light_gray_background">#F5F5F5</color>
+        <color name="gray_medium">#9E9E9E</color>
+
+
 </resources>

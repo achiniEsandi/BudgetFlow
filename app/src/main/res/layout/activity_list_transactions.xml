@@ -1,38 +1,124 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/mainLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="16dp"
+    android:background="@color/light_gray_background">
 
-    <Button
-        android:id="@+id/addButton"
+    <!-- Header with title and add button -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Add Transaction" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="16dp">
 
-    <TextView
-        android:id="@+id/emptyText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="No transactions yet"
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="My Transactions"
+            android:textSize="24sp"
+            android:textColor="@color/primary_dark"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-medium"/>
+
+        <Button
+            android:id="@+id/addButton"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:text="Add +"
+            android:textColor="@color/white"
+            android:background="@drawable/rounded_button_primary"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
+            android:drawableStart="@drawable/ic_add_white_24dp"
+            android:drawablePadding="8dp"
+            android:textAllCaps="false"
+            android:stateListAnimator="@null"
+            android:elevation="2dp"/>
+    </LinearLayout>
+
+    <!-- Empty state with illustration -->
+    <LinearLayout
+        android:id="@+id/emptyState"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
         android:visibility="gone"
-        android:layout_marginTop="16dp"/>
+        android:padding="32dp">
 
+        <ImageView
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:src="@drawable/ic_empty_transactions"
+            android:tint="@color/secondary_light"
+            android:layout_marginBottom="16dp"/>
+
+        <TextView
+            android:id="@+id/emptyText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="No transactions yet"
+            android:textSize="18sp"
+            android:textColor="@color/secondary_dark"
+            android:layout_marginBottom="8dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Tap the '+' button to add your first transaction"
+            android:textSize="14sp"
+            android:textColor="@color/gray_medium"
+            android:gravity="center"/>
+    </LinearLayout>
+
+    <!-- Transactions list with card style -->
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:layout_marginTop="8dp">
+        android:fillViewport="true">
 
         <LinearLayout
             android:id="@+id/transactionListView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"/>
-
+            android:orientation="vertical"
+            android:divider="@drawable/divider_space_8dp"
+            android:showDividers="middle"/>
     </ScrollView>
 
+    <!-- Bottom summary bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="@drawable/rounded_top_primary_light"
+        android:padding="16dp"
+        android:elevation="4dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Total:"
+            android:textSize="16sp"
+            android:textColor="@color/primary_dark"
+            android:textStyle="bold"/>
+
+        <TextView
+            android:id="@+id/totalAmountText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="$0.00"
+            android:textSize="18sp"
+            android:textColor="@color/primary_dark"
+            android:textStyle="bold"/>
+    </LinearLayout>
 </LinearLayout>
