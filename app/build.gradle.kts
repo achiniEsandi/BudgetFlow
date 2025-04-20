@@ -6,6 +6,7 @@ plugins {
 android {
     namespace = "com.example.budgetflow"
     compileSdk = 35
+    // Changed to match targetSdk (34)
 
     defaultConfig {
         applicationId = "com.example.budgetflow"
@@ -14,6 +15,8 @@ android {
         versionCode = 1
         versionName = "1.0"
 
+        // Add these if missing
+        vectorDrawables.useSupportLibrary = true
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -26,25 +29,40 @@ android {
             )
         }
     }
+
+    // Add this buildFeatures section
+    buildFeatures {
+        viewBinding = true  // or dataBinding if you use it
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
     kotlinOptions {
         jvmTarget = "11"
     }
 }
 
 dependencies {
-
+    // Update these versions to be consistent
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
+    implementation(libs.androidx.appcompat)  // Ensure this is 1.6.1+
     implementation(libs.material)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
-    implementation(libs.firebase.crashlytics.buildtools)
 
-    implementation("com.google.code.gson:gson:2.10.1")
+    // Remove duplicate appcompat dependency
+    // implementation("androidx.appcompat:appcompat:1.4.0")  // Duplicate
+
+    implementation ("com.google.code.gson:gson:2.8.8")
+
+
+    // Add these if missing
+    implementation("androidx.cardview:cardview:1.0.0")
+    implementation("androidx.recyclerview:recyclerview:1.3.2")
+    implementation(libs.firebase.crashlytics.buildtools)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

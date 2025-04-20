@@ -5,4 +5,12 @@
     <string name="fpwd">Forgot password?</string>
     <string name="login">Log In</string>
     <string name="signup">Sign Up</string>
+
+    <string name="type">Type</string>
+    <string name="amount_default">Rs. 0.00</string>
+    <string name="category">Category</string>
+    <string name="date">Date</string>
+    <string name="notes">Notes</string>
+    <string name="edit">Edit</string>
+    <string name="delete">Delete</string>
 </resources>

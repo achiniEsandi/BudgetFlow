@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class Home : AppCompatActivity() {
     @SuppressLint("MissingInflatedId")
@@ -23,6 +24,20 @@ class Home : AppCompatActivity() {
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
+        }
+
+        val bottomNav = findViewById<BottomNavigationView>(R.id.bottom_navigation)
+
+        bottomNav.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.nav_transactions -> {
+                    val intent = Intent(this, ListTransactionsActivity::class.java)
+                    startActivity(intent)
+                    true
+                }
+                // handle other nav items here
+                else -> false
+            }
         }
 
         val addButton: FloatingActionButton = findViewById(R.id.addBtn)

@@ -18,9 +18,6 @@
         <activity
             android:name=".ItemTransactionActivity"
             android:exported="false" />
-        <activity
-            android:name=".TransactionListActivity"
-            android:exported="false" />
         <activity android:name=".AddTransaction" />
         <activity
             android:name=".launch2"

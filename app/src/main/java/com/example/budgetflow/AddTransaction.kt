@@ -2,12 +2,12 @@ package com.example.budgetflow
 
 import android.app.DatePickerDialog
 import android.os.Bundle
-import android.util.Log
 import android.widget.*
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import java.text.SimpleDateFormat
 import java.util.*
 
 class AddTransaction : AppCompatActivity() {
@@ -37,6 +37,7 @@ class AddTransaction : AppCompatActivity() {
             insets
         }
 
+        // View initialization
         transactionTypeGroup = findViewById(R.id.transactionTypeGroup)
         amountInput = findViewById(R.id.amountInput)
         categorySpinner = findViewById(R.id.categorySpinner)
@@ -44,18 +45,22 @@ class AddTransaction : AppCompatActivity() {
         notesInput = findViewById(R.id.notesInput)
         submitButton = findViewById(R.id.submitButton)
 
+        // Spinner setup
         val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, transactionCategories)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         categorySpinner.adapter = adapter
 
+        // Date picker dialog setup
         datePickerButton.setOnClickListener {
             val calendar = Calendar.getInstance()
             val datePickerDialog = DatePickerDialog(
                 this,
                 { _, year, month, dayOfMonth ->
-                    val date = "$dayOfMonth-${month + 1}-$year"
-                    selectedDate = date
-                    datePickerButton.text = date
+                    val cal = Calendar.getInstance()
+                    cal.set(year, month, dayOfMonth)
+                    val format = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                    selectedDate = format.format(cal.time)
+                    datePickerButton.text = selectedDate
                 },
                 calendar.get(Calendar.YEAR),
                 calendar.get(Calendar.MONTH),
@@ -64,50 +69,75 @@ class AddTransaction : AppCompatActivity() {
             datePickerDialog.show()
         }
 
-        // Load for edit
+        // Check if editing
         editingTransactionId = intent.getLongExtra("transaction_id", -1)
         if (editingTransactionId != -1L) {
-            val transaction = TransactionManager.getTransactionById(this, editingTransactionId!!)
-            if (transaction != null) {
-                val radioId = if (transaction.type == "Income") R.id.incomeRadio else R.id.expenseRadio
-                transactionTypeGroup.check(radioId)
-                amountInput.setText(transaction.amount.toString())
-                categorySpinner.setSelection(transactionCategories.indexOf(transaction.category))
-                datePickerButton.text = transaction.date
-                selectedDate = transaction.date
-                notesInput.setText(transaction.notes)
-            }
+            loadTransactionForEdit(editingTransactionId!!)
         }
 
+        // Submit logic
         submitButton.setOnClickListener {
-            val type = if (transactionTypeGroup.checkedRadioButtonId == R.id.incomeRadio) "Income" else "Expense"
-            val amount = amountInput.text.toString().toDoubleOrNull()
-            val category = categorySpinner.selectedItem.toString()
-            val notes = notesInput.text.toString()
-
-            if (amount == null) {
-                Toast.makeText(this, "Enter valid amount", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            val transaction = Transaction(
-                id = editingTransactionId ?: System.currentTimeMillis(),
-                type = type,
-                amount = amount,
-                category = category,
-                date = selectedDate,
-                notes = notes
-            )
-
-            if (editingTransactionId != null && editingTransactionId != -1L) {
-                TransactionManager.updateTransaction(this, transaction)
-                Toast.makeText(this, "Transaction updated", Toast.LENGTH_SHORT).show()
-            } else {
-                TransactionManager.addTransaction(this, transaction)
-                Toast.makeText(this, "Transaction added", Toast.LENGTH_SHORT).show()
-            }
-
-            finish()
+            handleSubmit()
         }
+    }
+
+    private fun loadTransactionForEdit(id: Long) {
+        val transaction = TransactionManager.getTransactionById(this, id)
+        if (transaction != null) {
+            if (transaction.type == "Income") {
+                transactionTypeGroup.check(R.id.incomeRadio)
+            } else {
+                transactionTypeGroup.check(R.id.expenseRadio)
+            }
+            amountInput.setText(transaction.amount.toString())
+            categorySpinner.setSelection(transactionCategories.indexOf(transaction.category))
+            selectedDate = transaction.date
+            datePickerButton.text = transaction.date
+            notesInput.setText(transaction.notes)
+        }
+    }
+
+    private fun handleSubmit() {
+        val selectedType = if (transactionTypeGroup.checkedRadioButtonId == R.id.incomeRadio) "Income" else "Expense"
+        val amountText = amountInput.text.toString()
+        val notes = notesInput.text.toString()
+        val category = categorySpinner.selectedItem.toString()
+
+        // Validations
+        val amount = amountText.toDoubleOrNull()
+        if (amount == null || amount <= 0) {
+            Toast.makeText(this, "Enter a valid amount", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        if (selectedDate.isBlank()) {
+            Toast.makeText(this, "Please select a date", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // Improved ID logic
+        val transactionId = if (editingTransactionId != null && editingTransactionId != -1L)
+            editingTransactionId!!
+        else
+            System.currentTimeMillis()
+
+        val transaction = Transaction(
+            id = transactionId,
+            type = selectedType,
+            amount = amount,
+            category = category,
+            date = selectedDate,
+            notes = notes
+        )
+
+        if (editingTransactionId != null && editingTransactionId != -1L) {
+            TransactionManager.updateTransaction(this, transaction)
+            Toast.makeText(this, "Transaction updated", Toast.LENGTH_SHORT).show()
+        } else {
+            TransactionManager.addTransaction(this, transaction)
+            Toast.makeText(this, "Transaction added", Toast.LENGTH_SHORT).show()
+        }
+
+        finish()
     }
 }
