@@ -2,6 +2,7 @@ package com.example.budgetflow
 
 import android.app.DatePickerDialog
 import android.os.Bundle
+import android.util.Log
 import android.widget.*
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -78,6 +79,8 @@ class AddTransaction : AppCompatActivity() {
         // Submit logic
         submitButton.setOnClickListener {
             handleSubmit()
+            Log.d("AddTransaction", "Editing transaction: $editingTransactionId")
+
         }
     }
 
@@ -115,11 +118,7 @@ class AddTransaction : AppCompatActivity() {
             return
         }
 
-        // Improved ID logic
-        val transactionId = if (editingTransactionId != null && editingTransactionId != -1L)
-            editingTransactionId!!
-        else
-            System.currentTimeMillis()
+        val transactionId = editingTransactionId ?: System.currentTimeMillis()
 
         val transaction = Transaction(
             id = transactionId,
@@ -130,20 +129,22 @@ class AddTransaction : AppCompatActivity() {
             notes = notes
         )
 
-        // Save or update transaction
-        if (editingTransactionId != null && editingTransactionId != -1L) {
+        // Check if the transaction already exists
+        val existingTransaction = TransactionManager.getTransactionById(this, transaction.id)
+        if (existingTransaction != null && existingTransaction.id == transaction.id) {
+            // Update the existing transaction
             TransactionManager.updateTransaction(this, transaction)
             Toast.makeText(this, "Transaction updated", Toast.LENGTH_SHORT).show()
         } else {
+            // Add a new transaction
             TransactionManager.addTransaction(this, transaction)
             Toast.makeText(this, "Transaction added", Toast.LENGTH_SHORT).show()
         }
 
-        // Update the total balance and expenses in SharedPreferences
         updateBalanceAndExpense(transaction)
-
         finish()
     }
+
 
     private fun updateBalanceAndExpense(transaction: Transaction) {
         // Get SharedPreferences and update balance and expenses

@@ -62,9 +62,9 @@ class Home : AppCompatActivity() {
         }
 
         // Setup tab buttons (Daily, Weekly, Monthly)
-        val dailyBtn = findViewById<Button>(com.example.budgetflow.R.id.dailyBtn)
-        val weeklyBtn = findViewById<Button>(com.example.budgetflow.R.id.weeklyBtn)
-        val monthlyBtn = findViewById<Button>(com.example.budgetflow.R.id.monthlyBtn)
+        val dailyBtn = findViewById<Button>(R.id.dailyBtn)
+        val weeklyBtn = findViewById<Button>(R.id.weeklyBtn)
+        val monthlyBtn = findViewById<Button>(R.id.monthlyBtn)
 
         setupTabSelection(dailyBtn, weeklyBtn, monthlyBtn)
 

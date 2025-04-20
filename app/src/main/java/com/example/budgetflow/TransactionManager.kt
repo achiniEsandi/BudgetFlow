@@ -44,7 +44,8 @@ object TransactionManager {
     }
 
     fun addTransaction(context: Context, transaction: Transaction) {
-        val transactions = getAllTransactions(context).apply { add(transaction) }
+        val transactions = getAllTransactions(context)
+        transactions.add(transaction)
         saveTransactions(context, transactions)
         Log.d("TransactionManager", "Added transaction: $transaction")
         updateTotals(context)
@@ -90,14 +91,18 @@ object TransactionManager {
         val totalExpense = transactions.filter { it.type.equals("expense", ignoreCase = true) }.sumOf { it.amount }
         val totalBalance = totalIncome - totalExpense
 
-        getPreferences(context).edit()
+        // Log the totals before saving to SharedPreferences
+        Log.d("TransactionManager", "Before saving - Total Balance: $totalBalance, Total Expense: $totalExpense")
+
+        // Save to SharedPreferences
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit()
             .putFloat(KEY_TOTAL_BALANCE, totalBalance.toFloat())
             .putFloat(KEY_TOTAL_EXPENSE, totalExpense.toFloat())
             .apply()
 
         Log.d("TransactionManager", "Updated Totals -> Income: $totalIncome, Expense: $totalExpense, Balance: $totalBalance")
     }
-
 
     fun getTotalBalance(context: Context): Float {
         val balance = getPreferences(context).getFloat(KEY_TOTAL_BALANCE, 0f)
