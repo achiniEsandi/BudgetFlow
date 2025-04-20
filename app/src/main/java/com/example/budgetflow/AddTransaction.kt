@@ -130,6 +130,7 @@ class AddTransaction : AppCompatActivity() {
             notes = notes
         )
 
+        // Save or update transaction
         if (editingTransactionId != null && editingTransactionId != -1L) {
             TransactionManager.updateTransaction(this, transaction)
             Toast.makeText(this, "Transaction updated", Toast.LENGTH_SHORT).show()
@@ -138,6 +139,33 @@ class AddTransaction : AppCompatActivity() {
             Toast.makeText(this, "Transaction added", Toast.LENGTH_SHORT).show()
         }
 
+        // Update the total balance and expenses in SharedPreferences
+        updateBalanceAndExpense(transaction)
+
         finish()
+    }
+
+    private fun updateBalanceAndExpense(transaction: Transaction) {
+        // Get SharedPreferences and update balance and expenses
+        val sharedPreferences = getSharedPreferences("transaction_prefs", MODE_PRIVATE)
+        val editor = sharedPreferences.edit()
+
+        // Retrieve current balance and expenses
+        var totalBalance = sharedPreferences.getFloat("total_balance", 0f).toDouble()
+        var totalExpenses = sharedPreferences.getFloat("total_expense", 0f).toDouble()
+
+        // Update balance and expenses based on the transaction type
+        if (transaction.type == "Income") {
+            totalBalance += transaction.amount
+        } else {
+            totalExpenses += transaction.amount
+        }
+
+        // Save updated values
+        editor.putFloat("total_balance", totalBalance.toFloat())
+        editor.putFloat("total_expense", totalExpenses.toFloat())
+        editor.apply()
+
+        // Optionally, update the Home screen immediately by sending a broadcast or directly updating SharedPreferences
     }
 }

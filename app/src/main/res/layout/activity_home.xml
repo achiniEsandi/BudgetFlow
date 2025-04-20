@@ -72,10 +72,13 @@
                             android:textColor="#666" />
 
                         <TextView
+                            android:id="@+id/totalBalanceTextView"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:text="Total Balance: $0.00"
+                            android:padding="8dp"
+                            android:layout_marginBottom="8dp"
                             android:layout_marginTop="8dp"
-                            android:text="$7,783.00"
                             android:textColor="#4CAF50"
                             android:textSize="24sp"
                             android:textStyle="bold" />
@@ -107,7 +110,10 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
-                            android:text="-$1,187.40"
+                            android:id="@+id/totalExpenseTextView"
+                            android:text="Total Expenses: $0.00"
+                            android:padding="8dp"
+                            android:layout_marginBottom="8dp"
                             android:textColor="#F44336"
                             android:textSize="24sp"
                             android:textStyle="bold" />

@@ -2,7 +2,6 @@ package com.example.budgetflow
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.*
@@ -11,6 +10,10 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class ListTransactionsActivity : AppCompatActivity() {
 
@@ -47,7 +50,15 @@ class ListTransactionsActivity : AppCompatActivity() {
     }
 
     private fun loadTransactions() {
-        val transactions = TransactionManager.getAllTransactions(this)
+        lifecycleScope.launch {
+            val transactions = withContext(Dispatchers.IO) {
+                TransactionManager.getAllTransactions(this@ListTransactionsActivity)
+            }
+            updateTransactionList(transactions)
+        }
+    }
+
+    private fun updateTransactionList(transactions: List<Transaction>) {
         transactionListView.removeAllViews()
 
         if (transactions.isEmpty()) {
@@ -64,12 +75,14 @@ class ListTransactionsActivity : AppCompatActivity() {
                 view.findViewById<TextView>(R.id.transactionDate).text = transaction.date
                 view.findViewById<TextView>(R.id.transactionNotes).text = transaction.notes
 
+                // Edit button logic
                 view.findViewById<ImageButton>(R.id.editButton).setOnClickListener {
                     val intent = Intent(this, AddTransaction::class.java)
                     intent.putExtra("transaction_id", transaction.id)
                     startActivity(intent)
                 }
 
+                // Delete button logic
                 view.findViewById<ImageButton>(R.id.deleteButton).setOnClickListener {
                     showDeleteConfirmation(transaction.id)
                 }
@@ -82,23 +95,48 @@ class ListTransactionsActivity : AppCompatActivity() {
     }
 
     private fun showDeleteConfirmation(transactionId: Long) {
-        Log.d("ListTransactionsActivity", "Attempting to delete transaction ID: $transactionId")
         AlertDialog.Builder(this)
             .setTitle("Delete Transaction")
             .setMessage("Are you sure you want to delete this transaction?")
             .setPositiveButton("Delete") { _, _ ->
-                Log.d("ListTransactionsActivity", "Deleting transaction ID: $transactionId")
-                TransactionManager.deleteTransaction(this, transactionId)
-                Toast.makeText(this, "Transaction deleted", Toast.LENGTH_SHORT).show()
-                loadTransactions()
+                deleteTransaction(transactionId)
             }
             .setNegativeButton("Cancel", null)
             .show()
     }
 
+    private fun deleteTransaction(transactionId: Long) {
+        lifecycleScope.launch {
+            withContext(Dispatchers.IO) {
+                // Deleting transaction from database
+                TransactionManager.deleteTransaction(this@ListTransactionsActivity, transactionId)
+            }
+
+            // Refresh transaction list after deletion
+            Toast.makeText(this@ListTransactionsActivity, "Transaction deleted", Toast.LENGTH_SHORT).show()
+            loadTransactions()
+        }
+    }
 
     private fun updateTotal(transactions: List<Transaction>) {
-        val total = transactions.sumOf { if (it.type == "Expense") -it.amount else it.amount }
-        totalAmountText.text = "Rs. %.2f".format(total)
+        // Calculate total income and total expenses
+        val totalIncome = transactions.filter { it.type == "Income" }.sumOf { it.amount }
+        val totalExpenses = transactions.filter { it.type == "Expense" }.sumOf { it.amount }
+
+        // Calculate the balance (income - expenses)
+        val balance = totalIncome - totalExpenses
+
+        // Set the total amount text as the balance
+        totalAmountText.text = "Rs. %.2f".format(balance)
+
+        // Optionally, update a label to show if it's positive, negative, or zero
+        if (balance > 0) {
+            totalAmountText.setTextColor(resources.getColor(R.color.green))  // For positive balance
+        } else if (balance < 0) {
+            totalAmountText.setTextColor(resources.getColor(R.color.red))    // For negative balance (expenses)
+        } else {
+            totalAmountText.setTextColor(resources.getColor(R.color.black))  // For zero balance
+        }
     }
+
 }

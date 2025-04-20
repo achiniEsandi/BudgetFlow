@@ -15,6 +15,7 @@
     <color name="dividerLine">#E0E0E0</color> <!-- for subtle separators -->
 
     <color name="red">#E53935</color>
+    <color name="green">#4CAF50</color>
     <color name="teal_700">#018786</color>
 
 

@@ -8,73 +8,106 @@ import com.google.gson.reflect.TypeToken
 object TransactionManager {
     private const val PREFS_NAME = "transaction_prefs"
     private const val KEY_TRANSACTIONS = "transactions"
+    private const val KEY_TOTAL_BALANCE = "total_balance"
+    private const val KEY_TOTAL_EXPENSE = "total_expense"
 
     private val gson = Gson()
 
-    // This function fetches all transactions from SharedPreferences and returns a list of transactions.
+    private fun getPreferences(context: Context) = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+
+    private fun getTransactionsJson(context: Context): String? {
+        return getPreferences(context).getString(KEY_TRANSACTIONS, null)
+    }
+
+    private fun saveTransactionsJson(context: Context, transactionsJson: String) {
+        getPreferences(context).edit().putString(KEY_TRANSACTIONS, transactionsJson).apply()
+        Log.d("TransactionManager", "Saved transactions to SharedPreferences.")
+    }
+
     fun getAllTransactions(context: Context): MutableList<Transaction> {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val json = prefs.getString(KEY_TRANSACTIONS, null)
-        return if (json != null) {
-            val type = object : TypeToken<MutableList<Transaction>>() {}.type
-            gson.fromJson(json, type)
+        val json = getTransactionsJson(context)
+        return if (!json.isNullOrEmpty()) {
+            try {
+                // Explicitly provide the type token to resolve the type inference issue
+                val type = object : TypeToken<MutableList<Transaction>>() {}.type
+                gson.fromJson<MutableList<Transaction>>(json, type).also {
+                    Log.d("TransactionManager", "Loaded ${it.size} transactions.")
+                }
+            } catch (e: Exception) {
+                Log.e("TransactionManager", "Failed to parse transactions JSON: $e")
+                mutableListOf()
+            }
         } else {
+            Log.d("TransactionManager", "No transactions found.")
             mutableListOf()
         }
     }
 
-    // Adds a new transaction to the list and saves it.
     fun addTransaction(context: Context, transaction: Transaction) {
-        val transactions = getAllTransactions(context)
-        transactions.add(transaction)
+        val transactions = getAllTransactions(context).apply { add(transaction) }
         saveTransactions(context, transactions)
+        Log.d("TransactionManager", "Added transaction: $transaction")
+        updateTotals(context)
     }
 
-    // Updates an existing transaction in the list and saves the updated list.
     fun updateTransaction(context: Context, updatedTransaction: Transaction) {
         val transactions = getAllTransactions(context)
         val index = transactions.indexOfFirst { it.id == updatedTransaction.id }
         if (index != -1) {
             transactions[index] = updatedTransaction
             saveTransactions(context, transactions)
+            Log.d("TransactionManager", "Updated transaction: $updatedTransaction")
+            updateTotals(context)
+        } else {
+            Log.w("TransactionManager", "Transaction with ID ${updatedTransaction.id} not found.")
         }
     }
 
-    // Deletes a transaction by its ID.
     fun deleteTransaction(context: Context, transactionId: Long) {
-        val transactions = getAllTransactions(context) // Fetch all transactions
-
-        // Log before deletion
-        Log.d("TransactionManager", "Transactions before deletion: $transactions")
-
-        // Remove the transaction with the matching ID
+        val transactions = getAllTransactions(context)
         val updatedTransactions = transactions.filter { it.id != transactionId }
-
-        // Log after deletion
-        Log.d("TransactionManager", "Transactions after deletion: $updatedTransactions")
-
-        // Save the updated list of transactions with the correct key
         saveTransactions(context, updatedTransactions)
+        Log.d("TransactionManager", "Deleted transaction with ID: $transactionId")
+        updateTotals(context)
     }
 
-    // Function to fetch a transaction by its ID.
     fun getTransactionById(context: Context, id: Long): Transaction? {
-        return getAllTransactions(context).find { it.id == id }
+        return getAllTransactions(context).find { it.id == id }?.also {
+            Log.d("TransactionManager", "Fetched transaction by ID $id: $it")
+        }
     }
 
-    // Saves the updated list of transactions to SharedPreferences.
     private fun saveTransactions(context: Context, transactions: List<Transaction>) {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val editor = prefs.edit()
+        val transactionsJson = gson.toJson(transactions)
+        saveTransactionsJson(context, transactionsJson)
+    }
 
-        // Convert the updated list of transactions to JSON
-        val json = gson.toJson(transactions)
+    private fun updateTotals(context: Context) {
+        val transactions = getAllTransactions(context)
 
-        // Log the saved JSON to ensure the correct data is being saved
-        Log.d("TransactionManager", "Saving transactions: $json")
+        // Ensure that the transaction type matches the exact case stored in your model
+        val totalIncome = transactions.filter { it.type.equals("income", ignoreCase = true) }.sumOf { it.amount }
+        val totalExpense = transactions.filter { it.type.equals("expense", ignoreCase = true) }.sumOf { it.amount }
+        val totalBalance = totalIncome - totalExpense
 
-        // Use the consistent key for saving the transactions
-        editor.putString(KEY_TRANSACTIONS, json) // Ensure using the same key as the rest of the code
-        editor.apply()
+        getPreferences(context).edit()
+            .putFloat(KEY_TOTAL_BALANCE, totalBalance.toFloat())
+            .putFloat(KEY_TOTAL_EXPENSE, totalExpense.toFloat())
+            .apply()
+
+        Log.d("TransactionManager", "Updated Totals -> Income: $totalIncome, Expense: $totalExpense, Balance: $totalBalance")
+    }
+
+
+    fun getTotalBalance(context: Context): Float {
+        val balance = getPreferences(context).getFloat(KEY_TOTAL_BALANCE, 0f)
+        Log.d("TransactionManager", "Fetched Total Balance: $balance")
+        return balance
+    }
+
+    fun getTotalExpense(context: Context): Float {
+        val expense = getPreferences(context).getFloat(KEY_TOTAL_EXPENSE, 0f)
+        Log.d("TransactionManager", "Fetched Total Expense: $expense")
+        return expense
     }
 }
