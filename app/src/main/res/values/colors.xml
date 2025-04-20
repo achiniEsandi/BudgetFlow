@@ -14,5 +14,7 @@
     <color name="accentBlue">#537FE7</color> <!-- highlight, tabs, icons -->
     <color name="dividerLine">#E0E0E0</color> <!-- for subtle separators -->
 
+    <color name="red">#E53935</color>
+    <color name="teal_700">#018786</color>
 
 </resources>
