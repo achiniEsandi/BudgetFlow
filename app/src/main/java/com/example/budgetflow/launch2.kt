@@ -22,8 +22,15 @@ class launch2 : AppCompatActivity() {
 
         val next: Button = findViewById(R.id.loginbtn)
         next.setOnClickListener {
-            // Create an intent to go to the home screen
-            val intent = Intent(this, Home::class.java)
+            // Create an intent to go to the login screen
+            val intent = Intent(this, LoginActivity::class.java)
+            startActivity(intent)
+        }
+
+        val next1: Button = findViewById(R.id.signupbtn)
+        next1.setOnClickListener {
+            // Create an intent to go to the signup screen
+            val intent = Intent(this, SignupActivity::class.java)
             startActivity(intent)
         }
     }

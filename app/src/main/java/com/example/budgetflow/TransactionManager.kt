@@ -115,4 +115,53 @@ object TransactionManager {
         Log.d("TransactionManager", "Fetched Total Expense: $expense")
         return expense
     }
+
+
+    fun getMonthlyExpenses(context: Context): Double {
+        val transactions = getAllTransactions(context)
+        val now = java.util.Calendar.getInstance()
+        val currentMonth = now.get(java.util.Calendar.MONTH)
+        val currentYear = now.get(java.util.Calendar.YEAR)
+
+        val formatter = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+
+        return transactions.filter {
+            try {
+                val date = formatter.parse(it.date)
+                val cal = java.util.Calendar.getInstance().apply { time = date!! }
+                cal.get(java.util.Calendar.MONTH) == currentMonth &&
+                        cal.get(java.util.Calendar.YEAR) == currentYear &&
+                        it.type.equals("expense", ignoreCase = true)
+            } catch (e: Exception) {
+                false
+            }
+        }.sumOf { it.amount }
+    }
+
+    fun getMonthlyIncome(context: Context): Double {
+        val transactions = getAllTransactions(context)
+        val now = java.util.Calendar.getInstance()
+        val currentMonth = now.get(java.util.Calendar.MONTH)
+        val currentYear = now.get(java.util.Calendar.YEAR)
+
+        val formatter = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+
+        return transactions.filter {
+            try {
+                val date = formatter.parse(it.date)
+                val cal = java.util.Calendar.getInstance().apply { time = date!! }
+                cal.get(java.util.Calendar.MONTH) == currentMonth &&
+                        cal.get(java.util.Calendar.YEAR) == currentYear &&
+                        it.type.equals("income", ignoreCase = true)
+            } catch (e: Exception) {
+                false
+            }
+        }.sumOf { it.amount }
+    }
+
+
+
+
+
+
 }

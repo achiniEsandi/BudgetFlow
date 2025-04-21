@@ -14,9 +14,9 @@
         android:title=""
         android:enabled="false" />
     <item
-        android:id="@+id/nav_wallet"
+        android:id="@+id/nav_budget"
         android:icon="@drawable/wallet"
-        android:title="Wallet" />
+        android:title="Budget" />
     <item
         android:id="@+id/nav_profile"
         android:icon="@drawable/profile"
