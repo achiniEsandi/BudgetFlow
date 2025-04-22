@@ -3,8 +3,10 @@ package com.example.budgetflow
 import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -20,8 +22,9 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import com.google.android.material.floatingactionbutton.FloatingActionButton
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 class Home : AppCompatActivity() {
 
@@ -31,15 +34,21 @@ class Home : AppCompatActivity() {
     private val POST_NOTIFICATIONS_REQUEST_CODE = 101
     private val CHANNEL_ID = "budget_alerts"
 
+    private lateinit var balanceTextView: TextView
+    private lateinit var expenseTextView: TextView
+
     @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_home)
 
+        // Bind UI elements
+        balanceTextView = findViewById(R.id.totalBalanceTextView)
+        expenseTextView = findViewById(R.id.totalExpenseTextView)
+
         checkAndRequestNotificationPermission()
         BudgetAlertManager.createNotificationChannel(this)
-
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -65,8 +74,6 @@ class Home : AppCompatActivity() {
         }
 
         val addButton: FloatingActionButton = findViewById(R.id.addBtn)
-        addButton.visibility = View.VISIBLE
-        addButton.isEnabled = true
         addButton.setOnClickListener {
             try {
                 val intent = Intent(this, AddTransaction::class.java)
@@ -117,7 +124,7 @@ class Home : AppCompatActivity() {
     }
 
     private fun updateBalanceAndExpense(transaction: Transaction) {
-        if (transaction.type == "expense") {
+        if (transaction.type.equals("Expense", ignoreCase = true)) {
             totalExpenses += transaction.amount
         } else {
             totalBalance += transaction.amount
@@ -133,12 +140,17 @@ class Home : AppCompatActivity() {
         checkBudgetExceeded()
     }
 
-    private fun updateUI() {
-        val totalBalanceTextView: TextView = findViewById(R.id.totalBalanceTextView)
-        val totalExpenseTextView: TextView = findViewById(R.id.totalExpenseTextView)
+    private val balanceUpdateReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == "com.example.budgetflow.UPDATE_BALANCE") {
+                updateBalanceFromPrefs()
+            }
+        }
+    }
 
-        totalBalanceTextView.text = "Total Balance: Rs.${"%.2f".format(totalBalance)}"
-        totalExpenseTextView.text = "Total Expenses: Rs.${"%.2f".format(totalExpenses)}"
+    private fun updateUI() {
+        balanceTextView.text = "Total Balance: ₹${"%.2f".format(totalBalance)}"
+        expenseTextView.text = "Total Expenses: ₹${"%.2f".format(totalExpenses)}"
     }
 
     fun addTransaction(transaction: Transaction) {
@@ -166,11 +178,12 @@ class Home : AppCompatActivity() {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == POST_NOTIFICATIONS_REQUEST_CODE) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(this, "Notification permission granted", Toast.LENGTH_SHORT).show()
+            val msg = if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                "Notification permission granted"
             } else {
-                Toast.makeText(this, "Notification permission denied", Toast.LENGTH_SHORT).show()
+                "Notification permission denied"
             }
+            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -178,56 +191,28 @@ class Home : AppCompatActivity() {
         BudgetAlertManager.checkAndNotifyBudget(this, monthlyBudget, totalExpenses)
     }
 
-
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val name = "Budget Alerts"
-            val descriptionText = "Alerts when you exceed your monthly budget"
-            val importance = NotificationManager.IMPORTANCE_HIGH
-            val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
-                description = descriptionText
-            }
-
-            val notificationManager: NotificationManager =
-                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
-        }
+    private fun updateBalanceFromPrefs() {
+        val sharedPreferences = getSharedPreferences("transaction_prefs", MODE_PRIVATE)
+        totalBalance = sharedPreferences.getFloat("total_balance", 0f).toDouble()
+        totalExpenses = sharedPreferences.getFloat("total_expense", 0f).toDouble()
+        updateUI()
     }
 
-    private fun sendBudgetExceededNotification() {
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle("Budget Exceeded!")
-            .setContentText("You’ve exceeded your monthly budget. Please review your expenses.")
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .build()
-
-        val notificationManager =
-            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.notify(1001, notification)
+    override fun onStart() {
+        super.onStart()
+        LocalBroadcastManager.getInstance(this).registerReceiver(
+            balanceUpdateReceiver,
+            IntentFilter("com.example.budgetflow.UPDATE_BALANCE")
+        )
     }
-
-    private fun checkBudgetAndNotify() {
-        val prefs = getSharedPreferences("budget_prefs", Context.MODE_PRIVATE)
-        val budget = prefs.getFloat("monthly_budget", 0f)
-
-        if (budget > 0 && totalExpenses >= budget) {
-            val notification = NotificationCompat.Builder(this, "default")
-                .setContentTitle("Budget Exceeded!")
-                .setContentText("Your monthly expenses have exceeded the budget of Rs.${"%.2f".format(budget)}")
-                .setSmallIcon(R.drawable.ic_notification)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .build()
-
-            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.notify(2, notification)
-        }
-    }
-
 
     override fun onResume() {
         super.onResume()
         loadBalanceAndExpense()
-        checkBudgetAndNotify()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(balanceUpdateReceiver)
     }
 }

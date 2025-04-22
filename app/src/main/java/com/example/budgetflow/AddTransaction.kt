@@ -1,5 +1,7 @@
 package com.example.budgetflow
 
+import android.content.Intent
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import android.app.DatePickerDialog
 import android.os.Bundle
 import android.util.Log
@@ -71,10 +73,12 @@ class AddTransaction : AppCompatActivity() {
         }
 
         // Check if editing
-        editingTransactionId = intent.getLongExtra("transaction_id", -1)
-        if (editingTransactionId != -1L) {
-            loadTransactionForEdit(editingTransactionId!!)
+        val transactionId = intent.getLongExtra("transaction_id", -1L)
+        if (transactionId != -1L) {
+            editingTransactionId = transactionId
+            loadTransactionForEdit(transactionId)
         }
+
 
         // Submit logic
         submitButton.setOnClickListener {
@@ -129,10 +133,12 @@ class AddTransaction : AppCompatActivity() {
             notes = notes
         )
 
-        // Check if the transaction already exists
         val existingTransaction = TransactionManager.getTransactionById(this, transaction.id)
-        if (existingTransaction != null && existingTransaction.id == transaction.id) {
-            // Update the existing transaction
+        if (existingTransaction != null) {
+            // Reverse previous transaction's impact
+            reversePreviousTransaction(existingTransaction)
+
+            // Update the transaction
             TransactionManager.updateTransaction(this, transaction)
             Toast.makeText(this, "Transaction updated", Toast.LENGTH_SHORT).show()
         } else {
@@ -141,9 +147,36 @@ class AddTransaction : AppCompatActivity() {
             Toast.makeText(this, "Transaction added", Toast.LENGTH_SHORT).show()
         }
 
+        // Apply new amount to SharedPreferences
         updateBalanceAndExpense(transaction)
+
+        // Send broadcast to update Home screen
+        val intent = Intent("com.example.budgetflow.UPDATE_BALANCE")
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent)
+
+
         finish()
     }
+
+
+    private fun reversePreviousTransaction(transaction: Transaction) {
+        val sharedPreferences = getSharedPreferences("transaction_prefs", MODE_PRIVATE)
+        val editor = sharedPreferences.edit()
+
+        var totalBalance = sharedPreferences.getFloat("total_balance", 0f).toDouble()
+        var totalExpenses = sharedPreferences.getFloat("total_expense", 0f).toDouble()
+
+        if (transaction.type.equals("Income", ignoreCase = true)) {
+            totalBalance -= transaction.amount
+        } else {
+            totalExpenses -= transaction.amount
+        }
+
+        editor.putFloat("total_balance", totalBalance.toFloat())
+        editor.putFloat("total_expense", totalExpenses.toFloat())
+        editor.apply()
+    }
+
 
 
     private fun updateBalanceAndExpense(transaction: Transaction) {
