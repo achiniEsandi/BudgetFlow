@@ -4,16 +4,21 @@ import android.content.Context
 import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import java.text.SimpleDateFormat
+import java.util.*
 
 object TransactionManager {
     private const val PREFS_NAME = "transaction_prefs"
     private const val KEY_TRANSACTIONS = "transactions"
     private const val KEY_TOTAL_BALANCE = "total_balance"
     private const val KEY_TOTAL_EXPENSE = "total_expense"
+    private const val KEY_TOTAL_INCOME = "total_income"
 
     private val gson = Gson()
+    private val dateFormatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
 
-    private fun getPreferences(context: Context) = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private fun getPreferences(context: Context) =
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     private fun getTransactionsJson(context: Context): String? {
         return getPreferences(context).getString(KEY_TRANSACTIONS, null)
@@ -28,7 +33,6 @@ object TransactionManager {
         val json = getTransactionsJson(context)
         return if (!json.isNullOrEmpty()) {
             try {
-                // Explicitly provide the type token to resolve the type inference issue
                 val type = object : TypeToken<MutableList<Transaction>>() {}.type
                 gson.fromJson<MutableList<Transaction>>(json, type).also {
                     Log.d("TransactionManager", "Loaded ${it.size} transactions.")
@@ -86,22 +90,22 @@ object TransactionManager {
     private fun updateTotals(context: Context) {
         val transactions = getAllTransactions(context)
 
-        // Ensure that the transaction type matches the exact case stored in your model
-        val totalIncome = transactions.filter { it.type.equals("income", ignoreCase = true) }.sumOf { it.amount }
-        val totalExpense = transactions.filter { it.type.equals("expense", ignoreCase = true) }.sumOf { it.amount }
+        val totalIncome = transactions.filter { it.type.equals("income", ignoreCase = true) }
+            .sumOf { it.amount }
+        val totalExpense = transactions.filter { it.type.equals("expense", ignoreCase = true) }
+            .sumOf { it.amount }
         val totalBalance = totalIncome - totalExpense
 
-        // Log the totals before saving to SharedPreferences
-        Log.d("TransactionManager", "Before saving - Total Balance: $totalBalance, Total Expense: $totalExpense")
+        Log.d("TransactionManager", "Calculated Totals -> Income: $totalIncome, Expense: $totalExpense, Balance: $totalBalance")
 
-        // Save to SharedPreferences
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        prefs.edit()
-            .putFloat(KEY_TOTAL_BALANCE, totalBalance.toFloat())
-            .putFloat(KEY_TOTAL_EXPENSE, totalExpense.toFloat())
-            .apply()
+        val prefs = getPreferences(context)
+        prefs.edit().apply {
+            putFloat(KEY_TOTAL_BALANCE, totalBalance.toFloat())
+            putFloat(KEY_TOTAL_EXPENSE, totalExpense.toFloat())
+            putFloat(KEY_TOTAL_INCOME, totalIncome.toFloat())
+        }.apply()
 
-        Log.d("TransactionManager", "Updated Totals -> Income: $totalIncome, Expense: $totalExpense, Balance: $totalBalance")
+        Log.d("TransactionManager", "Saved Totals -> Balance: ${prefs.getFloat(KEY_TOTAL_BALANCE, 0f)}, Expense: ${prefs.getFloat(KEY_TOTAL_EXPENSE, 0f)}, Income: ${prefs.getFloat(KEY_TOTAL_INCOME, 0f)}")
     }
 
     fun getTotalBalance(context: Context): Float {
@@ -116,21 +120,24 @@ object TransactionManager {
         return expense
     }
 
+    fun getTotalIncome(context: Context): Float {
+        val income = getPreferences(context).getFloat(KEY_TOTAL_INCOME, 0f)
+        Log.d("TransactionManager", "Fetched Total Income: $income")
+        return income
+    }
 
     fun getMonthlyExpenses(context: Context): Double {
         val transactions = getAllTransactions(context)
-        val now = java.util.Calendar.getInstance()
-        val currentMonth = now.get(java.util.Calendar.MONTH)
-        val currentYear = now.get(java.util.Calendar.YEAR)
-
-        val formatter = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+        val now = Calendar.getInstance()
+        val currentMonth = now.get(Calendar.MONTH)
+        val currentYear = now.get(Calendar.YEAR)
 
         return transactions.filter {
             try {
-                val date = formatter.parse(it.date)
-                val cal = java.util.Calendar.getInstance().apply { time = date!! }
-                cal.get(java.util.Calendar.MONTH) == currentMonth &&
-                        cal.get(java.util.Calendar.YEAR) == currentYear &&
+                val date = dateFormatter.parse(it.date)
+                val cal = Calendar.getInstance().apply { time = date!! }
+                cal.get(Calendar.MONTH) == currentMonth &&
+                        cal.get(Calendar.YEAR) == currentYear &&
                         it.type.equals("expense", ignoreCase = true)
             } catch (e: Exception) {
                 false
@@ -140,28 +147,20 @@ object TransactionManager {
 
     fun getMonthlyIncome(context: Context): Double {
         val transactions = getAllTransactions(context)
-        val now = java.util.Calendar.getInstance()
-        val currentMonth = now.get(java.util.Calendar.MONTH)
-        val currentYear = now.get(java.util.Calendar.YEAR)
-
-        val formatter = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+        val now = Calendar.getInstance()
+        val currentMonth = now.get(Calendar.MONTH)
+        val currentYear = now.get(Calendar.YEAR)
 
         return transactions.filter {
             try {
-                val date = formatter.parse(it.date)
-                val cal = java.util.Calendar.getInstance().apply { time = date!! }
-                cal.get(java.util.Calendar.MONTH) == currentMonth &&
-                        cal.get(java.util.Calendar.YEAR) == currentYear &&
+                val date = dateFormatter.parse(it.date)
+                val cal = Calendar.getInstance().apply { time = date!! }
+                cal.get(Calendar.MONTH) == currentMonth &&
+                        cal.get(Calendar.YEAR) == currentYear &&
                         it.type.equals("income", ignoreCase = true)
             } catch (e: Exception) {
                 false
             }
         }.sumOf { it.amount }
     }
-
-
-
-
-
-
 }
