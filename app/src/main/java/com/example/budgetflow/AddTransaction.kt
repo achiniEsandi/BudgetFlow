@@ -1,8 +1,7 @@
 package com.example.budgetflow
 
-import android.content.Intent
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import android.app.DatePickerDialog
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.widget.*
@@ -10,6 +9,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -25,9 +25,15 @@ class AddTransaction : AppCompatActivity() {
     private var selectedDate: String = ""
     private var editingTransactionId: Long? = null
 
-    private val transactionCategories = listOf(
-        "Food", "Transport", "Entertainment", "Bills", "Shopping", "Income", "Others"
-    )
+    // ✅ Separate categories
+    private val incomeCategories = listOf("Salary", "Bonus", "Freelance", "Other")
+    private val expenseCategories = listOf("Food", "Transport", "Bills", "Shopping", "Other")
+
+    companion object {
+        const val PREFS_NAME = "transaction_prefs"
+        const val KEY_TOTAL_BALANCE = "total_balance"
+        const val KEY_TOTAL_EXPENSE = "total_expense"
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,7 +46,6 @@ class AddTransaction : AppCompatActivity() {
             insets
         }
 
-        // View initialization
         transactionTypeGroup = findViewById(R.id.transactionTypeGroup)
         amountInput = findViewById(R.id.amountInput)
         categorySpinner = findViewById(R.id.categorySpinner)
@@ -48,12 +53,20 @@ class AddTransaction : AppCompatActivity() {
         notesInput = findViewById(R.id.notesInput)
         submitButton = findViewById(R.id.submitButton)
 
-        // Spinner setup
-        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, transactionCategories)
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        categorySpinner.adapter = adapter
+        // Set default as Expense
+        setCategorySpinner("Expense")
 
-        // Date picker dialog setup
+        transactionTypeGroup.setOnCheckedChangeListener { _, checkedId ->
+            val type = if (checkedId == R.id.incomeRadio) "Income" else "Expense"
+            setCategorySpinner(type)
+        }
+
+        // Date Picker setup
+        val today = Calendar.getInstance()
+        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        selectedDate = sdf.format(today.time)
+        datePickerButton.text = selectedDate
+
         datePickerButton.setOnClickListener {
             val calendar = Calendar.getInstance()
             val datePickerDialog = DatePickerDialog(
@@ -72,45 +85,65 @@ class AddTransaction : AppCompatActivity() {
             datePickerDialog.show()
         }
 
-        // Check if editing
+        // Edit check
         val transactionId = intent.getLongExtra("transaction_id", -1L)
         if (transactionId != -1L) {
             editingTransactionId = transactionId
             loadTransactionForEdit(transactionId)
         }
 
-
-        // Submit logic
         submitButton.setOnClickListener {
             handleSubmit()
             Log.d("AddTransaction", "Editing transaction: $editingTransactionId")
-
         }
+    }
+
+    private fun setCategorySpinner(type: String) {
+        val categories = if (type == "Income") incomeCategories else expenseCategories
+        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, categories)
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        categorySpinner.adapter = adapter
     }
 
     private fun loadTransactionForEdit(id: Long) {
         val transaction = TransactionManager.getTransactionById(this, id)
         if (transaction != null) {
-            if (transaction.type == "Income") {
+            val type = transaction.type
+            if (type == "Income") {
                 transactionTypeGroup.check(R.id.incomeRadio)
             } else {
                 transactionTypeGroup.check(R.id.expenseRadio)
             }
-            amountInput.setText(transaction.amount.toString())
-            categorySpinner.setSelection(transactionCategories.indexOf(transaction.category))
+
+            amountInput.setText(String.format(Locale.getDefault(), "%.2f", transaction.amount))
+
+            // Update category list before setting spinner
+            setCategorySpinner(type)
+            val currentCategories = if (type == "Income") incomeCategories else expenseCategories
+            val index = currentCategories.indexOf(transaction.category)
+            if (index != -1) categorySpinner.setSelection(index)
+
             selectedDate = transaction.date
             datePickerButton.text = transaction.date
             notesInput.setText(transaction.notes)
+        } else {
+            Log.e("AddTransaction", "Transaction not found for ID: $id")
         }
     }
 
     private fun handleSubmit() {
-        val selectedType = if (transactionTypeGroup.checkedRadioButtonId == R.id.incomeRadio) "Income" else "Expense"
+        val selectedId = transactionTypeGroup.checkedRadioButtonId
+        if (selectedId == -1) {
+            Toast.makeText(this, "Please select a transaction type", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val type = if (selectedId == R.id.incomeRadio) "Income" else "Expense"
+
         val amountText = amountInput.text.toString()
-        val notes = notesInput.text.toString()
+        val rawNotes = notesInput.text.toString()
+        val notes = if (rawNotes.isBlank()) "No notes" else rawNotes
         val category = categorySpinner.selectedItem.toString()
 
-        // Validations
         val amount = amountText.toDoubleOrNull()
         if (amount == null || amount <= 0) {
             Toast.makeText(this, "Enter a valid amount", Toast.LENGTH_SHORT).show()
@@ -122,84 +155,68 @@ class AddTransaction : AppCompatActivity() {
             return
         }
 
-        val transactionId = editingTransactionId ?: System.currentTimeMillis()
+        val id = editingTransactionId ?: System.currentTimeMillis()
 
         val transaction = Transaction(
-            id = transactionId,
-            type = selectedType,
+            id = id,
+            type = type,
             amount = amount,
             category = category,
             date = selectedDate,
             notes = notes
         )
 
-        val existingTransaction = TransactionManager.getTransactionById(this, transaction.id)
-        if (existingTransaction != null) {
-            // Reverse previous transaction's impact
-            reversePreviousTransaction(existingTransaction)
-
-            // Update the transaction
+        val existing = TransactionManager.getTransactionById(this, id)
+        if (existing != null) {
+            reversePreviousTransaction(existing)
             TransactionManager.updateTransaction(this, transaction)
             Toast.makeText(this, "Transaction updated", Toast.LENGTH_SHORT).show()
         } else {
-            // Add a new transaction
             TransactionManager.addTransaction(this, transaction)
             Toast.makeText(this, "Transaction added", Toast.LENGTH_SHORT).show()
         }
 
-        // Apply new amount to SharedPreferences
         updateBalanceAndExpense(transaction)
 
-        // Send broadcast to update Home screen
         val intent = Intent("com.example.budgetflow.UPDATE_BALANCE")
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent)
-
 
         finish()
     }
 
-
     private fun reversePreviousTransaction(transaction: Transaction) {
-        val sharedPreferences = getSharedPreferences("transaction_prefs", MODE_PRIVATE)
+        val sharedPreferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         val editor = sharedPreferences.edit()
 
-        var totalBalance = sharedPreferences.getFloat("total_balance", 0f).toDouble()
-        var totalExpenses = sharedPreferences.getFloat("total_expense", 0f).toDouble()
+        var totalBalance = sharedPreferences.getFloat(KEY_TOTAL_BALANCE, 0f).toDouble()
+        var totalExpenses = sharedPreferences.getFloat(KEY_TOTAL_EXPENSE, 0f).toDouble()
 
-        if (transaction.type.equals("Income", ignoreCase = true)) {
+        if (transaction.type == "Income") {
             totalBalance -= transaction.amount
         } else {
             totalExpenses -= transaction.amount
         }
 
-        editor.putFloat("total_balance", totalBalance.toFloat())
-        editor.putFloat("total_expense", totalExpenses.toFloat())
+        editor.putFloat(KEY_TOTAL_BALANCE, totalBalance.toFloat())
+        editor.putFloat(KEY_TOTAL_EXPENSE, totalExpenses.toFloat())
         editor.apply()
     }
 
-
-
     private fun updateBalanceAndExpense(transaction: Transaction) {
-        // Get SharedPreferences and update balance and expenses
-        val sharedPreferences = getSharedPreferences("transaction_prefs", MODE_PRIVATE)
+        val sharedPreferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         val editor = sharedPreferences.edit()
 
-        // Retrieve current balance and expenses
-        var totalBalance = sharedPreferences.getFloat("total_balance", 0f).toDouble()
-        var totalExpenses = sharedPreferences.getFloat("total_expense", 0f).toDouble()
+        var totalBalance = sharedPreferences.getFloat(KEY_TOTAL_BALANCE, 0f).toDouble()
+        var totalExpenses = sharedPreferences.getFloat(KEY_TOTAL_EXPENSE, 0f).toDouble()
 
-        // Update balance and expenses based on the transaction type
         if (transaction.type == "Income") {
             totalBalance += transaction.amount
         } else {
             totalExpenses += transaction.amount
         }
 
-        // Save updated values
-        editor.putFloat("total_balance", totalBalance.toFloat())
-        editor.putFloat("total_expense", totalExpenses.toFloat())
+        editor.putFloat(KEY_TOTAL_BALANCE, totalBalance.toFloat())
+        editor.putFloat(KEY_TOTAL_EXPENSE, totalExpenses.toFloat())
         editor.apply()
-
-        // Optionally, update the Home screen immediately by sending a broadcast or directly updating SharedPreferences
     }
 }

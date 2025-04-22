@@ -3,10 +3,7 @@ package com.example.budgetflow
 import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
+import android.content.*
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -17,7 +14,6 @@ import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -35,6 +31,7 @@ class Home : AppCompatActivity() {
     private lateinit var balanceTextView: TextView
     private lateinit var expenseTextView: TextView
 
+    // Broadcast receiver to refresh data when transactions are updated
     private val balanceUpdateReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             loadBalanceAndExpense()
@@ -47,19 +44,34 @@ class Home : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_home)
 
-        // Bind UI elements
+        // Initialize Views
         balanceTextView = findViewById(R.id.totalBalanceTextView)
         expenseTextView = findViewById(R.id.totalExpenseTextView)
 
-        checkAndRequestNotificationPermission()
-        BudgetAlertManager.createNotificationChannel(this)
-
+        // Set up system insets
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
 
+        // Setup buttons
+        val dailyBtn = findViewById<Button>(R.id.dailyBtn)
+        val weeklyBtn = findViewById<Button>(R.id.weeklyBtn)
+        val monthlyBtn = findViewById<Button>(R.id.monthlyBtn)
+        setupTabSelection(dailyBtn, weeklyBtn, monthlyBtn)
+
+        // Set up FAB
+        val addButton: FloatingActionButton = findViewById(R.id.addBtn)
+        addButton.setOnClickListener {
+            try {
+                startActivity(Intent(this, AddTransaction::class.java))
+            } catch (e: Exception) {
+                Log.e("AddTransaction", "Error launching AddTransactionActivity", e)
+            }
+        }
+
+        // Setup bottom navigation
         val bottomNav = findViewById<BottomNavigationView>(R.id.bottom_navigation)
         bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
@@ -67,54 +79,41 @@ class Home : AppCompatActivity() {
                     startActivity(Intent(this, ListTransactionsActivity::class.java))
                     true
                 }
-
                 R.id.nav_budget -> {
                     startActivity(Intent(this, BudgetActivity::class.java))
                     true
                 }
 
+
                 else -> false
             }
         }
 
-        val addButton: FloatingActionButton = findViewById(R.id.addBtn)
-        addButton.setOnClickListener {
-            try {
-                val intent = Intent(this, AddTransaction::class.java)
-                startActivity(intent)
-            } catch (e: Exception) {
-                Log.e("AddTransaction", "Error launching AddTransactionActivity", e)
-            }
-        }
-
-        val dailyBtn = findViewById<Button>(R.id.dailyBtn)
-        val weeklyBtn = findViewById<Button>(R.id.weeklyBtn)
-        val monthlyBtn = findViewById<Button>(R.id.monthlyBtn)
-        setupTabSelection(dailyBtn, weeklyBtn, monthlyBtn)
+        checkAndRequestNotificationPermission()
+        BudgetAlertManager.createNotificationChannel(this)
 
         loadBalanceAndExpense()
     }
 
     private fun setupTabSelection(dailyBtn: Button, weeklyBtn: Button, monthlyBtn: Button) {
         dailyBtn.setOnClickListener {
-            dailyBtn.isSelected = true
-            weeklyBtn.isSelected = false
-            monthlyBtn.isSelected = false
+            setFilterSelection(dailyBtn, weeklyBtn, monthlyBtn)
         }
-
         weeklyBtn.setOnClickListener {
-            dailyBtn.isSelected = false
-            weeklyBtn.isSelected = true
-            monthlyBtn.isSelected = false
+            setFilterSelection(weeklyBtn, dailyBtn, monthlyBtn)
         }
-
         monthlyBtn.setOnClickListener {
-            dailyBtn.isSelected = false
-            weeklyBtn.isSelected = false
-            monthlyBtn.isSelected = true
+            setFilterSelection(monthlyBtn, dailyBtn, weeklyBtn)
         }
 
-        weeklyBtn.isSelected = true
+        // Default selected: weekly
+        setFilterSelection(weeklyBtn, dailyBtn, monthlyBtn)
+    }
+
+    private fun setFilterSelection(selected: Button, vararg others: Button) {
+        selected.isSelected = true
+        others.forEach { it.isSelected = false }
+        // You can add logic here to update UI or filter transactions accordingly
     }
 
     private fun loadBalanceAndExpense() {
@@ -122,11 +121,10 @@ class Home : AppCompatActivity() {
         totalBalance = sharedPreferences.getFloat("total_balance", 0f).toDouble()
         totalExpenses = sharedPreferences.getFloat("total_expense", 0f).toDouble()
 
-        // Update UI
-        balanceTextView.text = "Balance: Rs.%.2f".format(totalBalance)
-        expenseTextView.text = "Expenses: Rs.%.2f".format(totalExpenses)
+        // Format to 2 decimal places
+        balanceTextView.text = "Balance: Rs. %.2f".format(totalBalance)
+        expenseTextView.text = "Expenses: Rs. %.2f".format(totalExpenses)
     }
-
 
     private fun checkAndRequestNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -144,7 +142,6 @@ class Home : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Register for balance updates
         LocalBroadcastManager.getInstance(this)
             .registerReceiver(balanceUpdateReceiver, IntentFilter("com.example.budgetflow.UPDATE_BALANCE"))
         loadBalanceAndExpense()
