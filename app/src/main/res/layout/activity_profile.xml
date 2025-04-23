@@ -43,13 +43,6 @@
         android:layout_marginTop="24dp"/>
 
     <Button
-        android:id="@+id/btnExportData"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Export Data"
-        android:layout_marginTop="16dp"/>
-
-    <Button
         android:id="@+id/btnRestoreData"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -57,18 +50,21 @@
         android:layout_marginTop="16dp"/>
 
     <!-- Additional Export Buttons -->
+
+    <Button
+        android:id="@+id/btnExportData"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Export Data as text"
+        android:layout_marginTop="16dp"/>
+
     <Button
         android:id="@+id/btnExportJson"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Export as JSON"
+        android:text="Export Data as JSON"
         android:layout_marginTop="16dp" />
 
-    <Button
-        android:id="@+id/btnExportText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Export as Text"
-        android:layout_marginTop="16dp" />
+
 
 </LinearLayout>

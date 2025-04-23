@@ -2,11 +2,12 @@ package com.example.budgetflow
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
+import com.example.budgetflow.TransactionManager.getTransactions
+import org.json.JSONArray
 import java.io.File
 import java.io.FileOutputStream
 
@@ -18,6 +19,7 @@ class ProfileActivity : AppCompatActivity() {
     private lateinit var btnChangePassword: Button
     private lateinit var btnExportData: Button
     private lateinit var btnRestoreData: Button
+    private lateinit var btnExportJson: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -28,6 +30,7 @@ class ProfileActivity : AppCompatActivity() {
         tvEmail = findViewById(R.id.tvEmail)
         btnChangePassword = findViewById(R.id.btnChangePassword)
         btnExportData = findViewById(R.id.btnExportData)
+        btnExportJson = findViewById(R.id.btnExportJson)
         btnRestoreData = findViewById(R.id.btnRestoreData)
 
         loadUserData()
@@ -42,8 +45,14 @@ class ProfileActivity : AppCompatActivity() {
             exportTransactionData()
         }
 
+        btnExportJson.setOnClickListener {
+            val transactions = getTransactions(this) // Fetch transaction data
+            TransactionUtils.backupToInternalStorage(this, transactions)
+            Toast.makeText(this, "Data exported as JSON", Toast.LENGTH_SHORT).show()
+        }
+
         btnRestoreData.setOnClickListener {
-            restoreDataFromBackup()
+            TransactionUtils.restoreFromBackup(this)
         }
     }
 
@@ -60,7 +69,8 @@ class ProfileActivity : AppCompatActivity() {
         val jsonData = getTransactionData()
         val textData = getTransactionSummary(jsonData)
 
-        val textFile = File(filesDir, "transaction_summary.txt")
+        // Save data to text file
+        val textFile = File(filesDir, "transaction_backup.txt")
 
         try {
             FileOutputStream(textFile).use { it.write(textData.toByteArray()) }
@@ -77,12 +87,13 @@ class ProfileActivity : AppCompatActivity() {
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
 
-            startActivity(Intent.createChooser(shareIntent, "Open or Share Text File"))
+            startActivity(Intent.createChooser(shareIntent, "Share Transaction Data as Text File"))
         } catch (e: Exception) {
             e.printStackTrace()
             Toast.makeText(this, "Export failed: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
+
 
 
     private fun getTransactionSummary(jsonData: String): String {
@@ -105,16 +116,6 @@ class ProfileActivity : AppCompatActivity() {
         return sharedPref.getString("transaction_data", "[]") ?: "[]"
     }
 
-
-    private fun restoreDataFromBackup() {
-        val jsonFile = File(filesDir, "transaction_data.json")
-        if (jsonFile.exists()) {
-            val fileContent = jsonFile.readBytes()
-            restoreTransactions(fileContent)
-        } else {
-            Toast.makeText(this, "No backup found", Toast.LENGTH_SHORT).show()
-        }
-    }
 
     private fun restoreTransactions(fileContent: ByteArray) {
         val transactions = String(fileContent)
