@@ -89,6 +89,11 @@ class Home : AppCompatActivity() {
                     true
                 }
 
+                R.id.nav_profile -> {
+                    startActivity(Intent(this, ProfileActivity::class.java))
+                    true
+                }
+
 
                 else -> false
             }
