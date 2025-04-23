@@ -62,29 +62,34 @@ class AddTransaction : AppCompatActivity() {
             setCategorySpinner(type)
         }
 
-        // Date Picker setup
+        // Get the current date and one month ago
         val today = Calendar.getInstance()
-        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-        selectedDate = sdf.format(today.time)
-        datePickerButton.text = selectedDate
+        val oneMonthAgo = Calendar.getInstance().apply {
+            add(Calendar.MONTH, -1) // Set the date to one month ago
+        }
+
+        // DatePickerDialog initialization
+        val datePickerDialog = DatePickerDialog(
+            this,
+            { _, year, month, dayOfMonth ->
+                val cal = Calendar.getInstance()
+                cal.set(year, month, dayOfMonth)
+                selectedDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(cal.time)
+                datePickerButton.text = selectedDate
+            },
+            today.get(Calendar.YEAR),
+            today.get(Calendar.MONTH),
+            today.get(Calendar.DAY_OF_MONTH)
+        )
+
+        // Set constraints: Allow dates up to today and down to one month ago
+        datePickerDialog.datePicker.maxDate = today.timeInMillis // No future dates
+        datePickerDialog.datePicker.minDate = oneMonthAgo.timeInMillis // Allow dates only from the last month
 
         datePickerButton.setOnClickListener {
-            val calendar = Calendar.getInstance()
-            val datePickerDialog = DatePickerDialog(
-                this,
-                { _, year, month, dayOfMonth ->
-                    val cal = Calendar.getInstance()
-                    cal.set(year, month, dayOfMonth)
-                    val format = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                    selectedDate = format.format(cal.time)
-                    datePickerButton.text = selectedDate
-                },
-                calendar.get(Calendar.YEAR),
-                calendar.get(Calendar.MONTH),
-                calendar.get(Calendar.DAY_OF_MONTH)
-            )
             datePickerDialog.show()
         }
+
 
         // Edit check
         val transactionId = intent.getLongExtra("transaction_id", -1L)
@@ -223,9 +228,4 @@ class AddTransaction : AppCompatActivity() {
         editor.putFloat(KEY_TOTAL_EXPENSE, totalExpenses.toFloat())
         editor.apply()
     }
-
-
-
-
-
 }

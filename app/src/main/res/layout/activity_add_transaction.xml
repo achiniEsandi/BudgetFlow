@@ -61,22 +61,39 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
             android:hint="Amount"
-            android:inputType="numberDecimal" />
+            android:inputType="numberDecimal"
+            android:importantForAccessibility="yes"
+            android:contentDescription="Enter the transaction amount"/>
 
         <!-- Category -->
         <Spinner
             android:id="@+id/categorySpinner"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp" />
+            android:layout_marginBottom="16dp"
+            android:importantForAccessibility="yes"
+            android:contentDescription="Select the category of transaction" />
+
+        <!-- Custom Category EditText (Hidden by default) -->
+        <EditText
+            android:id="@+id/customCategoryEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:hint="Enter Custom Category"
+            android:visibility="gone"
+            android:importantForAccessibility="yes"
+            android:contentDescription="Enter a custom category if none selected" />
 
         <!-- Date -->
         <Button
             android:id="@+id/datePickerButton"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:text="Select Date" />
+            android:text="Select Date"
+            android:layout_marginTop="16dp"
+            android:importantForAccessibility="yes"
+            android:contentDescription="Select the date of transaction"/>
 
         <!-- Notes -->
         <EditText
@@ -87,15 +104,19 @@
             android:gravity="top"
             android:hint="Notes"
             android:inputType="textMultiLine"
-            android:minLines="3" />
+            android:minLines="3"
+            android:importantForAccessibility="yes"
+            android:contentDescription="Enter any notes or description for the transaction"/>
 
-        <!-- Submit -->
+        <!-- Submit Button -->
         <Button
             android:id="@+id/submitButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:backgroundTint="@color/accentBlue"
             android:text="Add Transaction"
-            android:textColor="@android:color/white" />
+            android:textColor="@android:color/white"
+            android:importantForAccessibility="yes"
+            android:contentDescription="Submit the transaction details"/>
     </LinearLayout>
 </ScrollView>
