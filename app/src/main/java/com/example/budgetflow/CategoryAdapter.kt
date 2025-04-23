@@ -46,7 +46,7 @@ class CategoryAdapter(
         holder.name.text = category.name
         holder.percentage.text = "${category.percentage}% of ${if (isIncome) "income" else "expenses"}"
         holder.progress.progress = category.percentage
-        holder.amount.text = if (isIncome) "+$${category.amount}" else "-$${category.amount}"
+        holder.amount.text = if (isIncome) "+Rs.${category.amount}" else "-Rs.${category.amount}"
         holder.amount.setTextColor(
             ContextCompat.getColor(
                 holder.itemView.context,
