@@ -1,5 +1,6 @@
 package com.example.budgetflow
 
+import android.app.Activity
 import android.app.DatePickerDialog
 import android.content.Intent
 import android.os.Bundle
@@ -181,6 +182,9 @@ class AddTransaction : AppCompatActivity() {
         val intent = Intent("com.example.budgetflow.UPDATE_BALANCE")
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent)
 
+        val resultIntent = Intent()
+        setResult(Activity.RESULT_OK, resultIntent)
+
         finish()
     }
 
@@ -219,4 +223,9 @@ class AddTransaction : AppCompatActivity() {
         editor.putFloat(KEY_TOTAL_EXPENSE, totalExpenses.toFloat())
         editor.apply()
     }
+
+
+
+
+
 }

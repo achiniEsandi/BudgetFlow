@@ -163,4 +163,11 @@ object TransactionManager {
             }
         }.sumOf { it.amount }
     }
+
+    fun getTransactions(context: Context): List<Transaction> {
+        val prefs = context.getSharedPreferences("transactions", Context.MODE_PRIVATE)
+        val json = prefs.getString("data", "[]") ?: "[]"
+        val type = object : TypeToken<List<Transaction>>() {}.type
+        return Gson().fromJson(json, type)
+    }
 }

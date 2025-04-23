@@ -1,28 +1,33 @@
 package com.example.budgetflow
 
 import android.content.Context
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Paint
+import android.graphics.*
 import android.util.AttributeSet
 import android.view.View
+import kotlin.math.cos
+import kotlin.math.sin
 
 class PieChartView(context: Context, attrs: AttributeSet) : View(context, attrs) {
 
     private val paint = Paint()
+    private val textPaint = Paint()
     private val data = mutableListOf<PieSlice>()
 
-    data class PieSlice(val value: Float, val color: Int)
+    data class PieSlice(val label: String, val value: Float, val color: Int)
 
     init {
         paint.isAntiAlias = true
+
+        textPaint.color = Color.BLACK
+        textPaint.textSize = 32f
+        textPaint.textAlign = Paint.Align.CENTER
+        textPaint.isAntiAlias = true
     }
 
-    // Set the data for the pie chart
     fun setData(data: List<PieSlice>) {
         this.data.clear()
         this.data.addAll(data)
-        invalidate()  // Redraw the view when data is set
+        invalidate()
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -30,22 +35,30 @@ class PieChartView(context: Context, attrs: AttributeSet) : View(context, attrs)
 
         val width = width.toFloat()
         val height = height.toFloat()
-        val radius = Math.min(width, height) / 2f
+        val radius = Math.min(width, height) / 2.5f
 
-        // Move the canvas to the center of the view
         canvas.translate(width / 2f, height / 2f)
 
-        var startAngle = 0f
-        val total = data.sumByDouble { it.value.toDouble() }.toFloat()
+        val total = data.sumOf { it.value.toDouble() }.toFloat()
 
-        // Draw each slice
-        data.forEach {
-            val sweepAngle = it.value / total * 360f
-            paint.color = it.color
-            canvas.drawArc(
-                -radius, -radius, radius, radius,
-                startAngle, sweepAngle, true, paint
-            )
+        if (total <= 0f) return
+
+        var startAngle = 0f
+
+        data.forEach { slice ->
+            val sweepAngle = slice.value / total * 360f
+            paint.color = slice.color
+            canvas.drawArc(-radius, -radius, radius, radius, startAngle, sweepAngle, true, paint)
+
+            // Mid-angle for label position
+            val midAngle = startAngle + sweepAngle / 2
+            val labelRadius = radius * 0.75f
+            val x = (labelRadius * cos(Math.toRadians(midAngle.toDouble()))).toFloat()
+            val y = (labelRadius * sin(Math.toRadians(midAngle.toDouble()))).toFloat()
+
+            val percent = (slice.value / total * 100).toInt()
+            canvas.drawText("${slice.label} ($percent%)", x, y, textPaint)
+
             startAngle += sweepAngle
         }
     }

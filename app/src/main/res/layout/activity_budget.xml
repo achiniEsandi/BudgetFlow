@@ -1,51 +1,68 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="24dp"
-    android:gravity="center">
+    android:layout_height="match_parent">
 
-    <TextView
-        android:id="@+id/tvTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Set Monthly Budget"
-        android:textSize="20sp"
-        android:textStyle="bold"/>
-
-    <EditText
-        android:id="@+id/etBudget"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Enter budget amount"
-        android:inputType="numberDecimal"
-        android:layout_marginTop="16dp" />
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:gravity="center_horizontal">
 
-    <Button
-        android:id="@+id/btnSaveBudget"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Save Budget"
-        android:layout_marginTop="16dp" />
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Set Monthly Budget"
+            android:textSize="20sp"
+            android:textStyle="bold" />
 
-    <TextView
-        android:id="@+id/tvBudgetStatus"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Remaining: Rs.0 / Rs.0"
-        android:textSize="18sp"
-        android:layout_marginTop="24dp" />
+        <EditText
+            android:id="@+id/etBudget"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Enter budget amount"
+            android:inputType="numberDecimal"
+            android:layout_marginTop="16dp" />
 
-    <ProgressBar
-        android:id="@+id/budgetProgressBar"
-        style="?android:attr/progressBarStyleHorizontal"
-        android:layout_width="match_parent"
-        android:layout_height="20dp"
-        android:progress="0"
-        android:max="100"
-        android:progressDrawable="@drawable/progress_drawable"
-        android:layout_marginTop="16dp"/>
+        <TextView
+            android:id="@+id/tvCurrencyLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Select Currency"
+            android:textSize="18sp"
+            android:layout_marginTop="16dp" />
 
-</LinearLayout>
+        <Spinner
+            android:id="@+id/spinnerCurrency"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp" />
+
+        <Button
+            android:id="@+id/btnSaveBudget"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Save Budget"
+            android:layout_marginTop="16dp" />
+
+        <TextView
+            android:id="@+id/tvBudgetStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Remaining: Rs.0 / Rs.0"
+            android:textSize="18sp"
+            android:layout_marginTop="24dp" />
+
+        <ProgressBar
+            android:id="@+id/budgetProgressBar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="20dp"
+            android:progress="0"
+            android:max="100"
+            android:layout_marginTop="16dp"
+            android:progressDrawable="@drawable/progress_drawable" />
+    </LinearLayout>
+</ScrollView>
