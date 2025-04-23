@@ -11,6 +11,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import com.example.budgetflow.AddTransaction.Companion.KEY_TOTAL_EXPENSE
+import com.example.budgetflow.AddTransaction.Companion.PREFS_NAME
 
 class BudgetActivity : AppCompatActivity() {
 
@@ -101,10 +103,10 @@ class BudgetActivity : AppCompatActivity() {
     }
 
     private fun getTotalExpenses(): Double {
-        // Replace with the actual method of calculating the total expenses.
-        // For now, a dummy value is returned.
-        return 500.0 // Dummy value for total expenses
+        val sharedPreferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+        return sharedPreferences.getFloat(KEY_TOTAL_EXPENSE, 0f).toDouble()
     }
+
 
     private fun requestNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&

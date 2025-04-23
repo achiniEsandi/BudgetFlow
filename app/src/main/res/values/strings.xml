@@ -13,4 +13,6 @@
     <string name="notes">Notes</string>
     <string name="edit">Edit</string>
     <string name="delete">Delete</string>
+
+    <string name="category_icon">Category icon</string>
 </resources>

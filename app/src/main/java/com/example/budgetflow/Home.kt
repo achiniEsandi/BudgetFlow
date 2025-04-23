@@ -17,9 +17,15 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.tabs.TabLayout
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class Home : AppCompatActivity() {
 
@@ -30,6 +36,9 @@ class Home : AppCompatActivity() {
 
     private lateinit var balanceTextView: TextView
     private lateinit var expenseTextView: TextView
+
+    private lateinit var categoryTabLayout: TabLayout
+    private lateinit var categoryRecyclerView: RecyclerView
 
     // Broadcast receiver to refresh data when transactions are updated
     private val balanceUpdateReceiver = object : BroadcastReceiver() {
@@ -44,6 +53,13 @@ class Home : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_home)
 
+        // Initialize category views
+        categoryTabLayout = findViewById(R.id.categoryTabLayout)
+        categoryRecyclerView = findViewById(R.id.categoryRecyclerView)
+
+        setupCategoryTabs()
+        loadCategoryData()
+
         // Initialize Views
         balanceTextView = findViewById(R.id.totalBalanceTextView)
         expenseTextView = findViewById(R.id.totalExpenseTextView)
@@ -55,11 +71,7 @@ class Home : AppCompatActivity() {
             insets
         }
 
-        // Setup buttons
-        val dailyBtn = findViewById<Button>(R.id.dailyBtn)
-        val weeklyBtn = findViewById<Button>(R.id.weeklyBtn)
-        val monthlyBtn = findViewById<Button>(R.id.monthlyBtn)
-        setupTabSelection(dailyBtn, weeklyBtn, monthlyBtn)
+
 
         // Set up FAB
         val addButton: FloatingActionButton = findViewById(R.id.addBtn)
@@ -105,6 +117,46 @@ class Home : AppCompatActivity() {
         loadBalanceAndExpense()
     }
 
+
+    private fun setupCategoryTabs() {
+        categoryTabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: TabLayout.Tab?) {
+                loadCategoryData(tab?.position == 1) // 0=Expenses, 1=Income
+            }
+            override fun onTabUnselected(tab: TabLayout.Tab?) {}
+            override fun onTabReselected(tab: TabLayout.Tab?) {}
+        })
+    }
+
+
+    private fun loadCategoryData(showIncome: Boolean = false) {
+        lifecycleScope.launch {
+            val transactions = withContext(Dispatchers.IO) {
+                TransactionManager.getAllTransactions(this@Home)
+            }
+
+            val filtered = transactions.filter {
+                if (showIncome) it.type == "Income" else it.type == "Expense"
+            }
+
+            val categories = filtered.groupBy { it.category }
+                .map { (category, transactions) ->
+                    val total = transactions.sumOf { it.amount }
+                    val allTotal = filtered.sumOf { it.amount }
+                    val percentage = if (allTotal > 0) (total / allTotal * 100).toInt() else 0
+
+                    CategorySummary(
+                        name = category,
+                        amount = total,
+                        percentage = percentage
+                    )
+                }
+                .sortedByDescending { it.amount }
+
+            categoryRecyclerView.adapter = CategoryAdapter(categories, showIncome)
+        }
+    }
+
     private fun setupTabSelection(dailyBtn: Button, weeklyBtn: Button, monthlyBtn: Button) {
         dailyBtn.setOnClickListener {
             setFilterSelection(dailyBtn, weeklyBtn, monthlyBtn)
@@ -127,13 +179,25 @@ class Home : AppCompatActivity() {
     }
 
     private fun loadBalanceAndExpense() {
-        val sharedPreferences = getSharedPreferences("transaction_prefs", Context.MODE_PRIVATE)
-        totalBalance = sharedPreferences.getFloat("total_balance", 0f).toDouble()
-        totalExpenses = sharedPreferences.getFloat("total_expense", 0f).toDouble()
+        lifecycleScope.launch {
+            val transactions = withContext(Dispatchers.IO) {
+                TransactionManager.getAllTransactions(this@Home)
+            }
 
-        // Format to 2 decimal places
-        balanceTextView.text = "Balance: Rs. %.2f".format(totalBalance)
-        expenseTextView.text = "Expenses: Rs. %.2f".format(totalExpenses)
+            val totalIncome = transactions.filter { it.type == "Income" }.sumOf { it.amount }
+            val totalExpenses = transactions.filter { it.type == "Expense" }.sumOf { it.amount }
+            val balance = totalIncome - totalExpenses
+
+            balanceTextView.text = "Balance: Rs. %.2f".format(balance)
+            expenseTextView.text = "Expenses: Rs. %.2f".format(totalExpenses)
+
+            // Optionally update shared preferences if needed elsewhere
+            val sharedPreferences = getSharedPreferences("transaction_prefs", Context.MODE_PRIVATE)
+            sharedPreferences.edit()
+                .putFloat("total_balance", balance.toFloat())
+                .putFloat("total_expense", totalExpenses.toFloat())
+                .apply()
+        }
     }
 
     private fun checkAndRequestNotificationPermission() {

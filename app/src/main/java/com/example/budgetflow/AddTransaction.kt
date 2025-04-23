@@ -54,8 +54,13 @@ class AddTransaction : AppCompatActivity() {
         notesInput = findViewById(R.id.notesInput)
         submitButton = findViewById(R.id.submitButton)
 
+        // Inside onCreate after findViewById assignments
+        val defaultSelectedType = if (transactionTypeGroup.checkedRadioButtonId == R.id.incomeRadio) "Income" else "Expense"
+        setCategorySpinner(defaultSelectedType)
+
+
         // Set default as Expense
-        setCategorySpinner("Expense")
+        //setCategorySpinner("Expense")
 
         transactionTypeGroup.setOnCheckedChangeListener { _, checkedId ->
             val type = if (checkedId == R.id.incomeRadio) "Income" else "Expense"
