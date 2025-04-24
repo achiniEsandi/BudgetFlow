@@ -8,7 +8,7 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.progressindicator.LinearProgressIndicator
-import com.example.budgetflow.R  // Adjust to match your actual resource package
+
 
 class CategoryAdapter(
     private val categories: List<CategorySummary>,
@@ -37,7 +37,9 @@ class CategoryAdapter(
             "Transport" -> R.drawable.transport
             "Bills" -> R.drawable.ic_bills
             "Entertainment" -> R.drawable.ic_entertainment
+            "Shopping" -> R.drawable.ic_shopping
             "Salary" -> R.drawable.salary
+            "Bonus" -> R.drawable.ic_bonus
             "Freelance" -> R.drawable.ic_freelance
             else -> R.drawable.ic_other
         }

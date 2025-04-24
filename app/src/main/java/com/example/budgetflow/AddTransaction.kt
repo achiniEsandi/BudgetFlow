@@ -28,7 +28,7 @@ class AddTransaction : AppCompatActivity() {
 
     // ✅ Separate categories
     private val incomeCategories = listOf("Salary", "Bonus", "Freelance", "Other")
-    private val expenseCategories = listOf("Food", "Transport", "Bills", "Shopping", "Other")
+    private val expenseCategories = listOf("Food", "Transport", "Bills", "Entertainment", "Shopping", "Other")
 
     companion object {
         const val PREFS_NAME = "transaction_prefs"
