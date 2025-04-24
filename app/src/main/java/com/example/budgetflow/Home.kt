@@ -97,7 +97,7 @@ class Home : AppCompatActivity() {
                 }
 
                 R.id.nav_home -> {
-                    startActivity(Intent(this, DashboardActivity::class.java))
+                    startActivity(Intent(this, Home::class.java))
                     true
                 }
 
