@@ -33,7 +33,7 @@
             android:layout_height="48dp"
             android:text="Add +"
             android:textColor="@color/white"
-            android:background="@drawable/rounded_button_primary"
+            android:backgroundTint="@color/accentBlue"
             android:paddingStart="24dp"
             android:paddingEnd="24dp"
             android:drawableStart="@drawable/ic_add_white_24dp"

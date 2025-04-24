@@ -12,8 +12,8 @@
     <!-- Email EditText -->
     <EditText
         android:id="@+id/emailEditText"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_width="410dp"
+        android:layout_height="54dp"
         android:layout_marginTop="124dp"
         android:hint="Email"
         android:inputType="textEmailAddress"
@@ -27,8 +27,8 @@
     <!-- Password EditText -->
     <EditText
         android:id="@+id/passwordEditText"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_width="414dp"
+        android:layout_height="56dp"
         android:layout_marginTop="36dp"
         android:hint="Password"
         android:inputType="textPassword"
@@ -40,30 +40,31 @@
         app:layout_constraintTop_toBottomOf="@id/emailEditText" />
 
     <!-- Login Button -->
+
+    <!-- Sign Up Button -->
     <Button
         android:id="@+id/loginbtn"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
+        android:layout_width="300dp"
+        android:layout_height="50dp"
+        android:layout_marginTop="28dp"
         android:backgroundTint="@color/accentBlue"
         android:text="Login"
         android:textColor="@android:color/white"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintHorizontal_bias="0.494"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/passwordEditText" />
 
-    <!-- Sign Up Button -->
     <Button
         android:id="@+id/signupbtn"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_width="300dp"
+        android:layout_height="50dp"
+        android:layout_marginTop="20dp"
         android:backgroundTint="@color/lightBlue"
         android:text="Don't have an account? Sign up"
         android:textColor="@color/accentBlue"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintHorizontal_bias="0.495"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/loginbtn" />
 

@@ -1,66 +1,34 @@
+// TransactionUtils.kt
 package com.example.budgetflow
 
 import android.content.Context
-import android.widget.Toast
-import org.json.JSONArray
-import org.json.JSONObject
+import com.example.budgetflow.TransactionManager.getAllTransactions
+import com.google.gson.Gson
 import java.io.File
 
 object TransactionUtils {
-    private const val FILE_NAME_JSON = "transactions_backup.json"
+    private const val PREFS_NAME       = "transaction_prefs"
+    private const val KEY_JSON         = "transactions_json"
+    private const val BACKUP_FILENAME  = "transactions_backup.json"
 
-    // Backup transactions to internal storage in JSON format
-    fun backupToInternalStorage(context: Context, transactions: List<Transaction>) {
-        val jsonArray = JSONArray()
-        transactions.forEach {
-            val jsonObject = JSONObject()
-            jsonObject.put("id", it.id)
-            jsonObject.put("type", it.type)
-            jsonObject.put("amount", it.amount)
-            jsonObject.put("category", it.category)
-            jsonObject.put("date", it.date)
-            jsonObject.put("notes", it.notes)
-            jsonArray.put(jsonObject)
+    /** Write current list into an on-device JSON file */
+    fun backupToInternalStorage(context: Context) {
+        val list = getAllTransactions(context)
+        val json = Gson().toJson(list)
+        context.openFileOutput(BACKUP_FILENAME, Context.MODE_PRIVATE).use {
+            it.write(json.toByteArray())
         }
-
-        val jsonFile = File(context.filesDir, FILE_NAME_JSON)
-        jsonFile.writeText(jsonArray.toString())
     }
 
-    // Restore transactions from JSON backup file
+    /** Read the JSON backup file and save it back into SharedPreferences */
     fun restoreFromBackup(context: Context) {
-        val jsonFile = File(context.filesDir, FILE_NAME_JSON)
-        if (jsonFile.exists()) {
-            val jsonData = jsonFile.readText()
-            val jsonArray = JSONArray(jsonData)
-            val restoredTransactions = mutableListOf<Transaction>()
-            for (i in 0 until jsonArray.length()) {
-                val jsonObject = jsonArray.getJSONObject(i)
-                val transaction = Transaction(
-                    jsonObject.getLong("id"),
-                    jsonObject.getString("type"),
-                    jsonObject.getDouble("amount"),
-                    jsonObject.getString("category"),
-                    jsonObject.getString("date"),
-                    jsonObject.getString("notes")
-                )
-                restoredTransactions.add(transaction)
-            }
+        val file = File(context.filesDir, BACKUP_FILENAME)
+        if (!file.exists()) return
 
-            // TODO: Save to SharedPreferences if needed
-            Toast.makeText(context, "Data restored successfully!", Toast.LENGTH_SHORT).show()
-
-        } else {
-            Toast.makeText(context, "No backup found", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-
-    // Delete the backup file
-    fun deleteBackup(context: Context) {
-        val file = File(context.filesDir, FILE_NAME_JSON)
-        if (file.exists()) {
-            file.delete()
-        }
+        val json = file.readText()
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putString(KEY_JSON, json)
+            .apply()
     }
 }

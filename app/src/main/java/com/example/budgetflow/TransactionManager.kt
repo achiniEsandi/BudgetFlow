@@ -8,8 +8,8 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 object TransactionManager {
-    private const val PREFS_NAME = "transaction_prefs"
-    private const val KEY_TRANSACTIONS = "transactions"
+    private const val PREFS_NAME         = "transaction_prefs"
+    private const val KEY_TRANSACTIONS   = "transactions_json"    // <- unified key
     private const val KEY_TOTAL_BALANCE = "total_balance"
     private const val KEY_TOTAL_EXPENSE = "total_expense"
     private const val KEY_TOTAL_INCOME = "total_income"

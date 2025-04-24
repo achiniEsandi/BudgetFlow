@@ -1,3 +1,4 @@
+// ProfileActivity.kt
 package com.example.budgetflow
 
 import android.content.Context
@@ -6,10 +7,8 @@ import android.os.Bundle
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
-import com.example.budgetflow.TransactionManager.getTransactions
-import org.json.JSONArray
+import com.example.budgetflow.TransactionManager.getAllTransactions
 import java.io.File
-import java.io.FileOutputStream
 
 class ProfileActivity : AppCompatActivity() {
 
@@ -18,107 +17,77 @@ class ProfileActivity : AppCompatActivity() {
     private lateinit var tvEmail: TextView
     private lateinit var btnChangePassword: Button
     private lateinit var btnExportData: Button
-    private lateinit var btnRestoreData: Button
     private lateinit var btnExportJson: Button
+    private lateinit var btnRestoreData: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_profile)
 
-        profileImageView = findViewById(R.id.profileImageView)
-        tvUsername = findViewById(R.id.tvUsername)
-        tvEmail = findViewById(R.id.tvEmail)
+        profileImageView  = findViewById(R.id.profileImageView)
+        tvUsername        = findViewById(R.id.tvUsername)
+        tvEmail           = findViewById(R.id.tvEmail)
         btnChangePassword = findViewById(R.id.btnChangePassword)
-        btnExportData = findViewById(R.id.btnExportData)
-        btnExportJson = findViewById(R.id.btnExportJson)
-        btnRestoreData = findViewById(R.id.btnRestoreData)
+        btnExportData     = findViewById(R.id.btnExportData)
+        btnExportJson     = findViewById(R.id.btnExportJson)
+        btnRestoreData    = findViewById(R.id.btnRestoreData)
 
         loadUserData()
-
         profileImageView.setImageResource(R.drawable.ic_profile)
 
         btnChangePassword.setOnClickListener {
             startActivity(Intent(this, ChangePasswordActivity::class.java))
         }
 
+        // 1) Export as a human-readable text summary
         btnExportData.setOnClickListener {
             exportTransactionData()
         }
 
+        // 2) Export raw JSON backup
         btnExportJson.setOnClickListener {
-            val transactions = getTransactions(this) // Fetch transaction data
-            TransactionUtils.backupToInternalStorage(this, transactions)
-            Toast.makeText(this, "Data exported as JSON", Toast.LENGTH_SHORT).show()
+            TransactionUtils.backupToInternalStorage(this)
+            Toast.makeText(this, "Transactions backed up (JSON)", Toast.LENGTH_SHORT).show()
         }
 
+        // 3) Restore from JSON backup
         btnRestoreData.setOnClickListener {
             TransactionUtils.restoreFromBackup(this)
+            Toast.makeText(this, "Transactions restored from backup", Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun loadUserData() {
-        val sharedPref = getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
-        val username = sharedPref.getString("username", "No username available")
-        val email = sharedPref.getString("email", "No email available")
-
-        tvUsername.text = username
-        tvEmail.text = email
+        val sp = getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
+        tvUsername.text = sp.getString("username", "—")
+        tvEmail.text    = sp.getString("email",    "—")
     }
 
     private fun exportTransactionData() {
-        val jsonData = getTransactionData()
-        val textData = getTransactionSummary(jsonData)
-
-        // Save data to text file
-        val textFile = File(filesDir, "transaction_backup.txt")
-
-        try {
-            FileOutputStream(textFile).use { it.write(textData.toByteArray()) }
-
-            val uri = FileProvider.getUriForFile(
-                this,
-                "${applicationContext.packageName}.provider",
-                textFile
-            )
-
-            val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
-                putExtra(Intent.EXTRA_STREAM, uri)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
-
-            startActivity(Intent.createChooser(shareIntent, "Share Transaction Data as Text File"))
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Toast.makeText(this, "Export failed: ${e.message}", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-
-
-    private fun getTransactionSummary(jsonData: String): String {
-        return buildString {
+        val list = getAllTransactions(this)
+        val textData = buildString {
             append("Transaction Summary\n\n")
-            val lines = jsonData.split("},")
-            for ((index, line) in lines.withIndex()) {
-                val id = Regex("\"id\":\\s*(\\d+)").find(line)?.groupValues?.get(1) ?: "N/A"
-                val amount = Regex("\"amount\":\\s*(\\d+(\\.\\d+)?)").find(line)?.groupValues?.get(1) ?: "N/A"
-                val desc = Regex("\"description\":\\s*\"([^\"]+)\"").find(line)?.groupValues?.get(1) ?: "N/A"
-                append("Transaction $id:\n")
-                append(" - Amount: $amount\n")
-                append(" - Description: $desc\n\n")
+            list.forEach { tx ->
+                append("ID ${tx.id}:\n")
+                append("  • Amount: ${tx.amount}\n")
+                append("  • Desc:   ${tx.notes}\n\n")
             }
         }
-    }
 
-    private fun getTransactionData(): String {
-        val sharedPref = getSharedPreferences("Transactions", Context.MODE_PRIVATE)
-        return sharedPref.getString("transaction_data", "[]") ?: "[]"
-    }
+        val textFile = File(filesDir, "transaction_backup.txt")
+        textFile.writeText(textData)
 
+        val uri = FileProvider.getUriForFile(
+            this,
+            "${applicationContext.packageName}.provider",
+            textFile
+        )
 
-    private fun restoreTransactions(fileContent: ByteArray) {
-        val transactions = String(fileContent)
-        Toast.makeText(this, "Data restored: $transactions", Toast.LENGTH_SHORT).show()
+        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        startActivity(Intent.createChooser(shareIntent, "Share Transaction Summary"))
     }
 }

@@ -90,10 +90,12 @@
             android:id="@+id/datePickerButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Select Date"
             android:layout_marginTop="16dp"
+            android:backgroundTint="@color/lightBlue"
+            android:contentDescription="Select the date of transaction"
             android:importantForAccessibility="yes"
-            android:contentDescription="Select the date of transaction"/>
+            android:text="Select Date"
+            android:textColor="@color/primary_dark" />
 
         <!-- Notes -->
         <EditText
