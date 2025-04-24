@@ -35,38 +35,48 @@
         android:layout_marginTop="8dp"/>
 
     <!-- Buttons for Actions -->
-    <Button
-        android:id="@+id/btnChangePassword"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Change Password"
-        android:backgroundTint="@color/lightBlue"
-        android:layout_marginTop="24dp"/>
 
     <Button
         android:id="@+id/btnRestoreData"
-        android:layout_width="match_parent"
+        android:layout_width="350dp"
         android:layout_height="wrap_content"
         android:text="Restore Data"
         android:backgroundTint="@color/accentBlue"
-        android:layout_marginTop="16dp"/>
+        android:layout_marginTop="24dp"/>
 
     <!-- Additional Export Buttons -->
 
     <Button
         android:id="@+id/btnExportData"
-        android:layout_width="match_parent"
+        android:layout_width="350dp"
         android:layout_height="wrap_content"
         android:text="Export Data as text"
         android:backgroundTint="@color/teal_700"
-        android:layout_marginTop="16dp"/>
+        android:layout_marginTop="24dp"/>
 
     <Button
         android:id="@+id/btnExportJson"
-        android:layout_width="match_parent"
+        android:layout_width="350dp"
         android:layout_height="wrap_content"
         android:text="Export Data as JSON"
         android:backgroundTint="@color/teal_700"
+        android:layout_marginTop="24dp" />
+
+    <Button
+        android:id="@+id/btnChangePassword"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:backgroundTint="@color/lightBlue"
+        android:text="Change Password"
+        android:textColor="@color/primary_dark" />
+
+    <Button
+        android:id="@+id/logoutbtn"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:text="Log out"
+        android:backgroundTint="@color/red"
         android:layout_marginTop="16dp" />
 
 

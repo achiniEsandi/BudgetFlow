@@ -25,6 +25,7 @@ class ProfileActivity : AppCompatActivity() {
     private lateinit var btnExportData: Button
     private lateinit var btnExportJson: Button
     private lateinit var btnRestoreData: Button
+    private lateinit var logoutbtn: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,6 +38,7 @@ class ProfileActivity : AppCompatActivity() {
         btnExportData     = findViewById(R.id.btnExportData)
         btnExportJson     = findViewById(R.id.btnExportJson)
         btnRestoreData    = findViewById(R.id.btnRestoreData)
+        logoutbtn         = findViewById(R.id.logoutbtn)
 
         loadUserData()
         profileImageView.setImageResource(R.drawable.ic_profile)
@@ -93,6 +95,12 @@ class ProfileActivity : AppCompatActivity() {
                 type = "application/json"
             }
             startActivityForResult(intent, REQUEST_CODE_RESTORE_JSON)
+        }
+
+
+        logoutbtn.setOnClickListener {
+            startActivity(Intent(this, LoginActivity::class.java))
+            finish()
         }
     }
 
