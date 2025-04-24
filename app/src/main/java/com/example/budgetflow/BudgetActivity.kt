@@ -1,7 +1,6 @@
 package com.example.budgetflow
 
 import android.Manifest
-import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
@@ -9,113 +8,143 @@ import android.os.Bundle
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.example.budgetflow.AddTransaction.Companion.KEY_TOTAL_EXPENSE
-import com.example.budgetflow.AddTransaction.Companion.PREFS_NAME
+import com.example.budgetflow.AddTransaction.Companion.PREFS_NAME as TX_PREFS
 
 class BudgetActivity : AppCompatActivity() {
 
+    companion object {
+        private const val PREFS_NAME = "budget_prefs"
+        private const val KEY_BUDGET = "budget"
+        private const val KEY_CURRENCY = "currency"
+    }
+
     private lateinit var etBudget: EditText
-    private lateinit var btnSave: Button
     private lateinit var spinnerCurrency: Spinner
+    private lateinit var btnSaveBudget: Button
     private lateinit var tvBudgetStatus: TextView
     private lateinit var budgetProgressBar: ProgressBar
 
-    private val CHANNEL_ID = "budget_alerts"
-    private val NOTIFICATION_PERMISSION_CODE = 1001
-
+    // Your list of options
     private val currencyOptions = arrayOf("Rs.", "$", "€", "£", "¥")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_budget)
 
-        etBudget = findViewById(R.id.etBudget)
-        btnSave = findViewById(R.id.btnSaveBudget)
-        spinnerCurrency = findViewById(R.id.spinnerCurrency)
-        tvBudgetStatus = findViewById(R.id.tvBudgetStatus)
+        // Bind views
+        etBudget          = findViewById(R.id.etBudget)
+        spinnerCurrency   = findViewById(R.id.spinnerCurrency)
+        btnSaveBudget     = findViewById(R.id.btnSaveBudget)
+        tvBudgetStatus    = findViewById(R.id.tvBudgetStatus)
         budgetProgressBar = findViewById(R.id.budgetProgressBar)
 
-        setupCurrencySpinner()
-        loadSavedCurrency()
-
-        BudgetAlertManager.createNotificationChannel(this)
-        requestNotificationPermission()
-
-        btnSave.setOnClickListener {
-            val budget = etBudget.text.toString().toDoubleOrNull()
-            if (budget != null && budget > 0) {
-                saveBudget(budget)
-                updateBudgetUI()
-            } else {
-                Toast.makeText(this, "Enter a valid budget amount", Toast.LENGTH_SHORT).show()
-            }
-        }
-
-        updateBudgetUI()
-    }
-
-    private fun setupCurrencySpinner() {
+        // 1) Spinner setup + load last‐saved currency
         val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, currencyOptions)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinnerCurrency.adapter = adapter
+
+        loadPrefsIntoUI()
+
+        // 2) Whenever the user picks a new currency, save it & redraw
+        spinnerCurrency.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>, view: android.view.View?, pos: Int, id: Long) {
+                saveCurrency(currencyOptions[pos])
+                updateBudgetUI()
+            }
+            override fun onNothingSelected(parent: AdapterView<*>) {}
+        }
+
+        // 3) On “Save Budget” click, store budget & refresh
+        btnSaveBudget.setOnClickListener {
+            val b = etBudget.text.toString().toDoubleOrNull()
+            if (b != null && b >= 0) {
+                saveBudget(b)
+                updateBudgetUI()
+                Toast.makeText(this, "Budget saved!", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "Enter a valid budget", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        // 4) (Optional) set up notifications
+        BudgetAlertManager.createNotificationChannel(this)
+        requestNotificationPermission()
+
+        // Initial draw
+        updateBudgetUI()
     }
 
-    private fun loadSavedCurrency() {
-        val sharedPref = getSharedPreferences("budget_prefs", Context.MODE_PRIVATE)
-        val savedCurrency = sharedPref.getString("currency", currencyOptions[0])
-        val currencyIndex = currencyOptions.indexOf(savedCurrency)
-        spinnerCurrency.setSelection(currencyIndex)
+    private fun loadPrefsIntoUI() {
+        val sp = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+
+        // Load budget into EditText
+        val savedBudget = sp.getFloat(KEY_BUDGET, 0f)
+        etBudget.setText(if (savedBudget > 0f) savedBudget.toString() else "")
+
+        // Load currency into Spinner
+        val savedCurr = sp.getString(KEY_CURRENCY, currencyOptions[0])!!
+        spinnerCurrency.setSelection(currencyOptions.indexOf(savedCurr).coerceAtLeast(0))
     }
 
-    private fun saveBudget(budget: Double) {
-        val sharedPref = getSharedPreferences("budget_prefs", Context.MODE_PRIVATE)
-        val editor = sharedPref.edit()
-
-        // Save budget amount
-        editor.putFloat("budget", budget.toFloat())
-
-        // Save selected currency
-        val selectedCurrency = spinnerCurrency.selectedItem.toString()
-        editor.putString("currency", selectedCurrency)
-
-        editor.apply()
-        Toast.makeText(this, "Budget saved!", Toast.LENGTH_SHORT).show()
+    private fun saveCurrency(cur: String) {
+        getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putString(KEY_CURRENCY, cur)
+            .apply()
     }
 
-    private fun getSavedBudget(): Double {
-        val sharedPref = getSharedPreferences("budget_prefs", Context.MODE_PRIVATE)
-        return sharedPref.getFloat("budget", 0f).toDouble()
+    private fun saveBudget(amount: Double) {
+        getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putFloat(KEY_BUDGET, amount.toFloat())
+            .apply()
     }
+
+    private fun getSavedBudget(): Double =
+        getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getFloat(KEY_BUDGET, 0f).toDouble()
+
+    private fun getSavedCurrency(): String =
+        getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getString(KEY_CURRENCY, currencyOptions[0])!!
+
+    private fun getTotalExpenses(): Double =
+        getSharedPreferences(TX_PREFS, MODE_PRIVATE)
+            .getFloat(KEY_TOTAL_EXPENSE, 0f).toDouble()
 
     private fun updateBudgetUI() {
-        val budget = getSavedBudget()
-        val totalExpenses = getTotalExpenses()
+        val budget   = getSavedBudget()
+        val spent    = getTotalExpenses()
+        val remain   = budget - spent
+        val currSym  = getSavedCurrency()
 
+        // Format with two decimals
+        fun D(d: Double) = String.format("%.2f", d)
+
+        tvBudgetStatus.text =
+            "Remaining: $currSym${D(remain)} / $currSym${D(budget)}"
+
+        // update progress bar (0–100% of spent/budget)
+        val pct = if (budget > 0) ((spent / budget) * 100).toInt().coerceIn(0,100) else 0
+        budgetProgressBar.progress = pct
+
+        // And push any budget‐alerts you’ve set up...
         BudgetAlertManager.checkAndNotifyBudget(
-            this,
-            budget,
-            totalExpenses,
-            tvBudgetStatus,
-            budgetProgressBar
+            this, budget, spent, tvBudgetStatus, budgetProgressBar
         )
     }
 
-    private fun getTotalExpenses(): Double {
-        val sharedPreferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-        return sharedPreferences.getFloat(KEY_TOTAL_EXPENSE, 0f).toDouble()
-    }
-
-
     private fun requestNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+            != PackageManager.PERMISSION_GRANTED
         ) {
             ActivityCompat.requestPermissions(
                 this,
                 arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                NOTIFICATION_PERMISSION_CODE
+                1001
             )
         }
     }

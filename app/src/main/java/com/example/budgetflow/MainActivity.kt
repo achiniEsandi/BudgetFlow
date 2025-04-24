@@ -2,6 +2,8 @@ package com.example.budgetflow
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.widget.ImageButton
 import android.widget.ImageView
 import androidx.activity.enableEdgeToEdge
@@ -26,5 +28,11 @@ class MainActivity : AppCompatActivity() {
             val intent = Intent(this, launch2::class.java)
             startActivity(intent)
         }
-    }
+
+        // Navigate to Onboard1 after 2 seconds
+        Handler(Looper.getMainLooper()).postDelayed({
+            startActivity(Intent(this, launch2::class.java))
+            finish()
+        }, 2000) }
+
 }
