@@ -13,7 +13,7 @@ class ChangePasswordActivity : AppCompatActivity() {
     private lateinit var etNewPassword: EditText
     private lateinit var btnSavePassword: Button
 
-    private val PREFS_NAME = "budget_prefs"
+    private val PREFS_NAME = "UserPrefs"
     private val PASSWORD_KEY = "password"
 
     override fun onCreate(savedInstanceState: Bundle?) {
